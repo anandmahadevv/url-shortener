@@ -27,3 +27,5 @@ app.get(['/api/analytics/overview', '/analytics/overview'], getAnalyticsOverview
 app.get(['/api/:shortCode', '/:shortCode'], redirectUrlController);
 
 app.use(errorHandler);
+
+export default app;

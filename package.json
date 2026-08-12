@@ -6,9 +6,21 @@
     "dev:client": "pnpm --filter client dev",
     "dev": "concurrently \"pnpm dev:server\" \"pnpm dev:client\"",
     "build": "pnpm --filter server build && pnpm --filter client build",
-    "test": "pnpm --filter server test"
+    "test": "pnpm --filter server test",
+    "postinstall": "prisma generate --schema=server/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.3.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "ioredis": "^5.4.2",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "prisma": "^6.3.1",
+    "typescript": "^5.7.3"
   }
 }
