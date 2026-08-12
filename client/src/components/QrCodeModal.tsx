@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import QRCode from 'qrcode';
-import { X, Download, Copy, Check, Sparkles, QrCode as QrIcon, Palette, Image as ImageIcon } from 'lucide-react';
+import { X, Download, Copy, Check, QrCode as QrIcon, Palette, Image as ImageIcon } from 'lucide-react';
+import { drawQrToCanvas } from '../utils/qrGenerator';
 
 interface QrCodeModalProps {
   shortUrl: string;
@@ -31,49 +31,19 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({ shortUrl, shortCode, o
   ];
 
   useEffect(() => {
-    generateQr();
+    if (canvasRef.current) {
+      drawQrToCanvas(canvasRef.current, shortUrl, fgColor, bgColor, 320);
+    }
   }, [shortUrl, fgColor, bgColor]);
 
-  const generateQr = async () => {
-    if (!canvasRef.current) return;
-
-    try {
-      await QRCode.toCanvas(canvasRef.current, shortUrl, {
-        width: 320,
-        margin: 2,
-        color: {
-          dark: fgColor,
-          light: bgColor === '#00000000' ? '#00000000' : bgColor
-        },
-        errorCorrectionLevel: 'H'
-      });
-    } catch (err) {
-      console.error('Failed to generate QR code', err);
-    }
-  };
-
   const handleDownload = () => {
-    if (!canvasRef.current) return;
-
-    // Create high-res download canvas
     const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = 1024;
-    tempCanvas.height = 1024;
+    drawQrToCanvas(tempCanvas, shortUrl, fgColor, bgColor, 1024);
 
-    QRCode.toCanvas(tempCanvas, shortUrl, {
-      width: 1024,
-      margin: 3,
-      color: {
-        dark: fgColor,
-        light: bgColor === '#00000000' ? '#00000000' : bgColor
-      },
-      errorCorrectionLevel: 'H'
-    }, () => {
-      const link = document.createElement('a');
-      link.download = `niat-me-qr-${shortCode}.png`;
-      link.href = tempCanvas.toDataURL('image/png');
-      link.click();
-    });
+    const link = document.createElement('a');
+    link.download = `niat-me-qr-${shortCode}.png`;
+    link.href = tempCanvas.toDataURL('image/png');
+    link.click();
   };
 
   const handleCopyImage = async () => {
