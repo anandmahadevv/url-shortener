@@ -35,7 +35,13 @@ export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) =>
         })
       });
 
-      const data = await response.json();
+      let data: any = {};
+      const responseText = await response.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        data = { error: responseText || 'Server returned an unparseable response.' };
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to shorten URL');

@@ -85,12 +85,17 @@ export function App() {
           try {
             const res = await fetch(`/api/stats/${item.shortCode}`);
             if (res.ok) {
-              const data = await res.json();
-              return {
-                ...item,
-                shortUrl: `https://niat.me/${item.shortCode}`,
-                clickCount: data.clickCount
-              };
+              const text = await res.text();
+              try {
+                const data = JSON.parse(text);
+                return {
+                  ...item,
+                  shortUrl: `https://niat.me/${item.shortCode}`,
+                  clickCount: data.clickCount
+                };
+              } catch {
+                // ignore
+              }
             }
           } catch (err) {
             // retain existing

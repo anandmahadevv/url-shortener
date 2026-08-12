@@ -33,8 +33,13 @@ export const AnalyticsDashboard: React.FC = () => {
     try {
       const res = await fetch('/api/analytics/overview');
       if (res.ok) {
-        const json = await res.json();
-        setData(json);
+        const text = await res.text();
+        try {
+          const json = JSON.parse(text);
+          setData(json);
+        } catch {
+          // ignore non-json
+        }
       }
     } catch (err) {
       console.error('Failed to fetch analytics', err);
