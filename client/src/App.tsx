@@ -86,12 +86,19 @@ export function App() {
             const res = await fetch(`/api/stats/${item.shortCode}`);
             if (res.ok) {
               const data = await res.json();
-              return { ...item, clickCount: data.clickCount };
+              return {
+                ...item,
+                shortUrl: `https://niat.me/${item.shortCode}`,
+                clickCount: data.clickCount
+              };
             }
           } catch (err) {
             // retain existing
           }
-          return item;
+          return {
+            ...item,
+            shortUrl: `https://niat.me/${item.shortCode}`
+          };
         })
       );
 
@@ -103,11 +110,15 @@ export function App() {
   };
 
   const handleShortenSuccess = (newUrl: UrlItem) => {
-    setCurrentResult(newUrl);
+    const formattedUrl = {
+      ...newUrl,
+      shortUrl: `https://niat.me/${newUrl.shortCode}`
+    };
+    setCurrentResult(formattedUrl);
 
     setUrls((prev) => {
-      const filtered = prev.filter((u) => u.shortCode !== newUrl.shortCode);
-      const nextList = [newUrl, ...filtered];
+      const filtered = prev.filter((u) => u.shortCode !== formattedUrl.shortCode);
+      const nextList = [formattedUrl, ...filtered];
       localStorage.setItem('swift_urls', JSON.stringify(nextList));
       return nextList;
     });

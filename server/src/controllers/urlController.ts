@@ -6,9 +6,7 @@ function getBaseUrl(req: Request): string {
   if (process.env.BASE_URL) {
     return process.env.BASE_URL.replace(/\/$/, '');
   }
-  const protocol = req.protocol;
-  const host = req.get('host');
-  return `${protocol}://${host}`;
+  return 'https://niat.me';
 }
 
 export const shortenUrlController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -61,7 +59,7 @@ export const redirectUrlController = async (req: Request, res: Response, next: N
     const targetUrl = await urlService.resolveUrl(shortCode);
 
     if (!targetUrl) {
-      const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+      const clientUrl = process.env.CLIENT_URL || 'https://niat.me';
       res.redirect(302, `${clientUrl}/404?code=${encodeURIComponent(shortCode)}`);
       return;
     }
