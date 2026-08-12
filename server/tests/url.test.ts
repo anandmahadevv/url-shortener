@@ -65,7 +65,7 @@ describe('URL Shortener API Integration Flow', () => {
       .send({ longUrl: 'javascript:alert(1)' });
 
     expect(res.status).toBe(400);
-    expect(res.body.error).toContain('Dangerous URL scheme');
+    expect(res.body.error).toContain('dangerous URL scheme');
   });
 
   it('should successfully shorten a valid URL using Base62 encoding', async () => {

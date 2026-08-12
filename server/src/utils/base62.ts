@@ -1,26 +1,28 @@
 const BASE62_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const BASE_OFFSET = 916132832n; // Guarantees 6-character short codes starting from ID 1 (e.g. 100001, 100002)
 
 /**
- * Encodes a numeric ID (number or bigint) to a Base62 string.
+ * Encodes a numeric ID (number or bigint) to a 6-character Base62 string.
  * @param id Non-negative integer ID
- * @returns Base62 encoded string
+ * @param minLength Minimum code length (default: 6)
+ * @returns Base62 encoded string of at least minLength
  */
-export function encodeBase62(id: number | bigint): string {
-  let num = BigInt(id);
-  
-  if (num < 0n) {
+export function encodeBase62(id: number | bigint, minLength: number = 6): string {
+  const rawId = BigInt(id);
+  if (rawId < 0n) {
     throw new Error('ID must be a non-negative integer');
   }
 
-  if (num === 0n) {
-    return BASE62_CHARS[0];
-  }
-
+  let num = rawId + BASE_OFFSET;
   let result = '';
   while (num > 0n) {
     const remainder = Number(num % 62n);
     result = BASE62_CHARS[remainder] + result;
     num = num / 62n;
+  }
+
+  while (result.length < minLength) {
+    result = '0' + result;
   }
 
   return result;
@@ -46,5 +48,5 @@ export function decodeBase62(code: string): bigint {
     result = result * 62n + BigInt(index);
   }
 
-  return result;
+  return result >= BASE_OFFSET ? result - BASE_OFFSET : result;
 }

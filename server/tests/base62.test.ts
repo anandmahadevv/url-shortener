@@ -2,15 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { encodeBase62, decodeBase62 } from '../src/utils/base62';
 
 describe('Base62 Encoding and Decoding', () => {
-  it('should correctly encode basic numbers', () => {
-    expect(encodeBase62(0)).toBe('0');
-    expect(encodeBase62(1)).toBe('1');
-    expect(encodeBase62(9)).toBe('9');
-    expect(encodeBase62(10)).toBe('a');
-    expect(encodeBase62(35)).toBe('z');
-    expect(encodeBase62(36)).toBe('A');
-    expect(encodeBase62(61)).toBe('Z');
-    expect(encodeBase62(62)).toBe('10');
+  it('should correctly encode IDs to 6-character Base62 strings', () => {
+    expect(encodeBase62(1)).toBe('100001');
+    expect(encodeBase62(2)).toBe('100002');
+    expect(encodeBase62(100)).toBe('10001C');
+    expect(encodeBase62(1).length).toBe(6);
+    expect(encodeBase62(99999).length).toBe(6);
   });
 
   it('should correctly decode basic Base62 strings', () => {
