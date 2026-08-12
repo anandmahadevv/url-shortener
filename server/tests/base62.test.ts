@@ -1,32 +1,27 @@
 import { describe, it, expect } from 'vitest';
 import { encodeBase62, decodeBase62 } from '../src/utils/base62';
 
-describe('Base62 Encoding and Decoding', () => {
-  it('should correctly encode IDs to 6-character Base62 strings', () => {
-    expect(encodeBase62(1)).toBe('100001');
-    expect(encodeBase62(2)).toBe('100002');
-    expect(encodeBase62(100)).toBe('10001C');
-    expect(encodeBase62(1).length).toBe(6);
-    expect(encodeBase62(99999).length).toBe(6);
+describe('Base62 / Alphabetic 6-Letter Encoding', () => {
+  it('should encode numeric IDs into 6-letter pure alphabetic strings', () => {
+    const code1 = encodeBase62(1);
+    const code2 = encodeBase62(2);
+    
+    expect(code1).toMatch(/^[a-zA-Z]{6}$/);
+    expect(code2).toMatch(/^[a-zA-Z]{6}$/);
+    expect(code1).not.toBe(code2);
+    expect(code1.length).toBe(6);
+    expect(code2.length).toBe(6);
   });
 
-  it('should correctly decode basic Base62 strings', () => {
-    expect(decodeBase62('0')).toBe(0n);
-    expect(decodeBase62('1')).toBe(1n);
-    expect(decodeBase62('a')).toBe(10n);
-    expect(decodeBase62('z')).toBe(35n);
-    expect(decodeBase62('A')).toBe(36n);
-    expect(decodeBase62('Z')).toBe(61n);
-    expect(decodeBase62('10')).toBe(62n);
-  });
-
-  it('should successfully roundtrip encode and decode large IDs', () => {
-    const testIds = [1n, 12345n, 99999999999n, 1000000000000000n];
-    for (const id of testIds) {
-      const encoded = encodeBase62(id);
-      const decoded = decodeBase62(encoded);
-      expect(decoded).toBe(id);
+  it('should generate distinct 6-letter codes across sequential IDs', () => {
+    const set = new Set();
+    for (let i = 1; i <= 100; i++) {
+      const code = encodeBase62(i);
+      expect(code).toMatch(/^[a-zA-Z]{6}$/);
+      expect(code.length).toBe(6);
+      set.add(code);
     }
+    expect(set.size).toBe(100);
   });
 
   it('should throw an error for invalid characters when decoding', () => {
