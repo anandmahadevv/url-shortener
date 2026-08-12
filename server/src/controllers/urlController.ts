@@ -49,18 +49,18 @@ export const shortenUrlController = async (req: Request, res: Response, next: Ne
 
 export const redirectUrlController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { shortCode } = req.params;
+    const code = String(req.params.shortCode || '');
 
-    if (!shortCode || shortCode === 'favicon.ico' || shortCode === 'robots.txt' || shortCode.startsWith('api')) {
+    if (!code || code === 'favicon.ico' || code === 'robots.txt' || code.startsWith('api')) {
       res.status(404).send('Not Found');
       return;
     }
 
-    const targetUrl = await urlService.resolveUrl(shortCode);
+    const targetUrl = await urlService.resolveUrl(code);
 
     if (!targetUrl) {
       const clientUrl = process.env.CLIENT_URL || 'https://niat.me';
-      res.redirect(302, `${clientUrl}/404?code=${encodeURIComponent(shortCode)}`);
+      res.redirect(302, `${clientUrl}/404?code=${encodeURIComponent(code)}`);
       return;
     }
 
@@ -72,18 +72,18 @@ export const redirectUrlController = async (req: Request, res: Response, next: N
 
 export const getUrlStatsController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { shortCode } = req.params;
+    const code = String(req.params.shortCode || '');
 
-    if (!shortCode) {
+    if (!code) {
       res.status(400).json({ error: 'Short code is required' });
       return;
     }
 
     const baseUrl = getBaseUrl(req);
-    const stats = await urlService.getUrlStats(shortCode, baseUrl);
+    const stats = await urlService.getUrlStats(code, baseUrl);
 
     if (!stats) {
-      res.status(404).json({ error: `Short code '${shortCode}' not found or has expired.` });
+      res.status(404).json({ error: `Short code '${code}' not found or has expired.` });
       return;
     }
 

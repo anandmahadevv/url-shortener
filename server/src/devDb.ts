@@ -40,7 +40,7 @@ export async function ensurePostgresServer(): Promise<void> {
       CREATE INDEX IF NOT EXISTS "Url_shortCode_idx" ON "Url"("shortCode");
     `);
 
-    const server = db.getPostgresServer(port);
+    const server = (db as any).getPostgresServer(port);
     console.log(`✅ Embedded PostgreSQL server listening on postgresql://postgres:postgres@localhost:${port}/urlshortener`);
   } catch (err) {
     console.error('Failed to start embedded postgres server:', err);
