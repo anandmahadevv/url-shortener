@@ -19,11 +19,11 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.post('/api/shorten', shortenRateLimiter, shortenUrlController);
-app.get('/api/stats/:shortCode', getUrlStatsController);
-app.get('/api/urls', getRecentUrlsController);
-app.get('/api/analytics/overview', getAnalyticsOverviewController);
+app.post(['/api/shorten', '/shorten'], shortenRateLimiter, shortenUrlController);
+app.get(['/api/stats/:shortCode', '/stats/:shortCode'], getUrlStatsController);
+app.get(['/api/urls', '/urls'], getRecentUrlsController);
+app.get(['/api/analytics/overview', '/analytics/overview'], getAnalyticsOverviewController);
 
-app.get('/:shortCode', redirectUrlController);
+app.get(['/api/:shortCode', '/:shortCode'], redirectUrlController);
 
 app.use(errorHandler);

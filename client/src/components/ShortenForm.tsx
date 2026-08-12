@@ -40,11 +40,11 @@ export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) =>
       try {
         data = JSON.parse(responseText);
       } catch (e) {
-        data = { error: responseText || 'Server returned an unparseable response.' };
+        data = { error: responseText || `HTTP ${response.status}: Server response was empty or non-JSON.` };
       }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to shorten URL');
+        throw new Error(data.error || `HTTP ${response.status}: Failed to shorten URL`);
       }
 
       onShortenSuccess(data);
