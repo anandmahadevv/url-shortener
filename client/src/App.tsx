@@ -206,7 +206,7 @@ export function App() {
             {/* Header Banner */}
             <div className="text-center space-y-4">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] uppercase font-mono font-semibold tracking-[0.25em]">
-                <Sparkles className="w-3 h-3" /> niat.me Base62 Key Engine &bull; Redis Cache &bull; Postgres
+                <Sparkles className="w-3 h-3" /> niat.me 6-Letter Key Engine &bull; Redis Cache &bull; Postgres
               </div>
 
               <h1 className="text-4xl sm:text-6xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white leading-tight">
@@ -217,12 +217,18 @@ export function App() {
               </h1>
 
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto font-mono leading-relaxed">
-                Deterministic Base62 short code generation for <strong className="text-slate-900 dark:text-slate-200 font-bold">niat.me</strong>, dual-layer caching, non-blocking click analytics, and strict protocol validation.
+                Deterministic 6-letter alphabetic short code generation for <strong className="text-slate-900 dark:text-slate-200 font-bold">niat.me</strong>, dual-layer caching, non-blocking click analytics, and strict protocol validation.
               </p>
             </div>
 
-            {/* Asymmetrical Bento Metric Architecture */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            {/* Shorten Form - Placed First as requested */}
+            <ShortenForm onShortenSuccess={handleShortenSuccess} />
+
+            {/* Shorten Result Display */}
+            {currentResult && <ShortenResult result={currentResult} />}
+
+            {/* Asymmetrical Bento Metric Architecture - Placed below URL Shortener section */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2">
               <div className="bg-slate-900/[0.03] dark:bg-white/[0.025] p-1 rounded-2xl border border-slate-200/90 dark:border-white/10 ring-1 ring-slate-900/5 dark:ring-white/5">
                 <div className="bg-white dark:bg-[#090a0d] p-4 rounded-[calc(1rem-0.25rem)] transition-colors">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">Provisioned Links</span>
@@ -241,7 +247,7 @@ export function App() {
                 <div className="bg-white dark:bg-[#090a0d] p-4 rounded-[calc(1rem-0.25rem)] transition-colors">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">Algorithm</span>
                   <span className="text-xs font-bold font-mono text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-1.5">
-                    <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Base62 ID
+                    <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> 6-Letter Alpha
                   </span>
                 </div>
               </div>
@@ -255,12 +261,6 @@ export function App() {
                 </div>
               </div>
             </div>
-
-            {/* Shorten Form */}
-            <ShortenForm onShortenSuccess={handleShortenSuccess} />
-
-            {/* Shorten Result Display */}
-            {currentResult && <ShortenResult result={currentResult} />}
 
             {/* List of Shortened URLs */}
             <UrlList urls={urls} onRefreshStats={() => refreshAllStats(urls)} />
