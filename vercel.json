@@ -1,22 +1,37 @@
 {
-  "buildCommand": "pnpm --filter server build && pnpm --filter client build",
-  "outputDirectory": "client/dist",
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/api/:path*",
-      "destination": "/api"
+      "src": "api/index.ts",
+      "use": "@vercel/node"
     },
     {
-      "source": "/health",
-      "destination": "/api"
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.ts"
     },
     {
-      "source": "/:shortCode([a-zA-Z]{6})",
-      "destination": "/api"
+      "src": "/health",
+      "dest": "api/index.ts"
     },
     {
-      "source": "/:path*",
-      "destination": "/index.html"
+      "src": "/([a-zA-Z]{6})",
+      "dest": "api/index.ts"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "client/$1"
     }
   ]
 }
