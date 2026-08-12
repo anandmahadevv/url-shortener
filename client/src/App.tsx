@@ -203,13 +203,19 @@ export function App() {
       <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-12 pb-24 flex-grow">
         {activeTab === 'shortener' && (
           <div className="space-y-10 animate-slide-up">
-            {/* Header Banner */}
-            <div className="text-center space-y-4">
+            {/* Shorten Form - Placed at the very top of the page */}
+            <ShortenForm onShortenSuccess={handleShortenSuccess} />
+
+            {/* Shorten Result Display */}
+            {currentResult && <ShortenResult result={currentResult} />}
+
+            {/* Header Banner - Placed below ShortenForm as requested */}
+            <div className="text-center space-y-4 pt-4">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] uppercase font-mono font-semibold tracking-[0.25em]">
                 <Sparkles className="w-3 h-3" /> niat.me 6-Letter Key Engine &bull; Redis Cache &bull; Postgres
               </div>
 
-              <h1 className="text-4xl sm:text-6xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white leading-tight">
+              <h1 className="text-3xl sm:text-5xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white leading-tight">
                 High-Performance <br className="hidden sm:inline" />
                 <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-500 dark:from-emerald-400 dark:via-teal-300 dark:to-indigo-300 bg-clip-text text-transparent">
                   URL Shortener & Telemetry
@@ -220,12 +226,6 @@ export function App() {
                 Deterministic 6-letter alphabetic short code generation for <strong className="text-slate-900 dark:text-slate-200 font-bold">niat.me</strong>, dual-layer caching, non-blocking click analytics, and strict protocol validation.
               </p>
             </div>
-
-            {/* Shorten Form - Placed First as requested */}
-            <ShortenForm onShortenSuccess={handleShortenSuccess} />
-
-            {/* Shorten Result Display */}
-            {currentResult && <ShortenResult result={currentResult} />}
 
             {/* Asymmetrical Bento Metric Architecture - Placed below URL Shortener section */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2">
