@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Copy, Check, ExternalLink, Sparkles, Clock } from 'lucide-react';
+import { Copy, Check, ExternalLink, Sparkles, Clock, QrCode as QrIcon } from 'lucide-react';
+import { QrCodeModal } from './QrCodeModal';
 
 interface ShortenResultProps {
   result: {
@@ -14,6 +15,7 @@ interface ShortenResultProps {
 
 export const ShortenResult: React.FC<ShortenResultProps> = ({ result }) => {
   const [copied, setCopied] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -53,6 +55,15 @@ export const ShortenResult: React.FC<ShortenResultProps> = ({ result }) => {
 
           <div className="flex items-center gap-2 shrink-0">
             <button
+              onClick={() => setShowQrModal(true)}
+              className="px-3.5 py-2.5 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+              title="Generate & Customize QR Code"
+            >
+              <QrIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>QR Studio</span>
+            </button>
+
+            <button
               onClick={handleCopy}
               id="copy-short-url-btn"
               className="flex-1 sm:flex-initial flex items-center justify-between gap-3 px-4 py-2.5 bg-emerald-500 dark:bg-emerald-400 hover:bg-emerald-400 dark:hover:bg-emerald-300 text-slate-950 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer shadow-md group"
@@ -74,6 +85,15 @@ export const ShortenResult: React.FC<ShortenResultProps> = ({ result }) => {
             </a>
           </div>
         </div>
+
+        {/* QR Code Modal Popup */}
+        {showQrModal && (
+          <QrCodeModal
+            shortUrl={result.shortUrl}
+            shortCode={result.shortCode}
+            onClose={() => setShowQrModal(false)}
+          />
+        )}
 
         {/* Metadata Footer */}
         <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10 flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-2 font-mono">

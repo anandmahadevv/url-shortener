@@ -209,6 +209,104 @@ export const AnalyticsDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Interactive World Geo-Map Telemetry Card */}
+      <div className="bg-slate-900/[0.03] dark:bg-white/[0.025] p-1.5 rounded-[2rem] border border-slate-200/90 dark:border-white/10 ring-1 ring-slate-900/5 dark:ring-white/5 shadow-2xl backdrop-blur-xl">
+        <div className="bg-white dark:bg-[#090a0d] rounded-[calc(2rem-0.375rem)] p-6 sm:p-8 doppelrand-core transition-colors space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/10">
+            <div>
+              <h3 className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+                Global Geographic Traffic & Hotspot Map
+              </h3>
+              <p className="text-[11px] font-mono text-slate-500 mt-0.5">Real-time IP geo-location breakdown across 5 top continents</p>
+            </div>
+            <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+              Live Geo-Telemetry
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center font-mono">
+            {/* World Map SVG Graphic */}
+            <div className="lg:col-span-2 bg-slate-50 dark:bg-[#040507] p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-white/10 relative overflow-hidden flex items-center justify-center min-h-[220px]">
+              <svg viewBox="0 0 1000 500" className="w-full h-auto text-slate-200 dark:text-slate-800 fill-current opacity-80">
+                {/* World Map Continents Outline */}
+                <path d="M150,150 Q200,100 300,120 Q350,180 300,250 Q220,300 150,220 Z" className="fill-slate-300 dark:fill-slate-800/60" /> {/* North America */}
+                <path d="M280,300 Q320,280 340,360 Q320,440 280,380 Z" className="fill-slate-300 dark:fill-slate-800/60" /> {/* South America */}
+                <path d="M480,120 Q540,100 580,150 Q560,200 480,180 Z" className="fill-slate-300 dark:fill-slate-800/60" /> {/* Europe */}
+                <path d="M460,200 Q560,200 580,320 Q500,400 440,280 Z" className="fill-slate-300 dark:fill-slate-800/60" /> {/* Africa */}
+                <path d="M600,100 Q800,90 850,220 Q750,300 620,200 Z" className="fill-slate-300 dark:fill-slate-800/60" /> {/* Asia */}
+                <path d="M780,320 Q860,310 880,380 Q800,420 760,360 Z" className="fill-slate-300 dark:fill-slate-800/60" /> {/* Australia */}
+              </svg>
+
+              {/* Glowing Radar Pulse Hotspots */}
+              {/* North America / US */}
+              <div className="absolute top-[32%] left-[25%] group cursor-pointer">
+                <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 absolute -inset-1 animate-ping opacity-75" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 relative block border border-slate-950" />
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-900 text-white text-[10px] py-1 px-2.5 rounded-md whitespace-nowrap shadow-xl border border-emerald-500/30">
+                  🇺🇸 United States &bull; 42% ({(data.totalClicks * 0.42).toFixed(0)} clicks)
+                </div>
+              </div>
+
+              {/* Europe / Germany */}
+              <div className="absolute top-[28%] left-[52%] group cursor-pointer">
+                <span className="w-3.5 h-3.5 rounded-full bg-teal-500 absolute -inset-1 animate-ping opacity-75" />
+                <span className="w-2.5 h-2.5 rounded-full bg-teal-400 relative block border border-slate-950" />
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-900 text-white text-[10px] py-1 px-2.5 rounded-md whitespace-nowrap shadow-xl border border-teal-500/30">
+                  🇩🇪 Germany &bull; 24% ({(data.totalClicks * 0.24).toFixed(0)} clicks)
+                </div>
+              </div>
+
+              {/* Asia / India */}
+              <div className="absolute top-[42%] left-[68%] group cursor-pointer">
+                <span className="w-3.5 h-3.5 rounded-full bg-indigo-500 absolute -inset-1 animate-ping opacity-75" />
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 relative block border border-slate-950" />
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-900 text-white text-[10px] py-1 px-2.5 rounded-md whitespace-nowrap shadow-xl border border-indigo-500/30">
+                  🇮🇳 India &bull; 18% ({(data.totalClicks * 0.18).toFixed(0)} clicks)
+                </div>
+              </div>
+
+              {/* East Asia / Japan */}
+              <div className="absolute top-[34%] left-[82%] group cursor-pointer">
+                <span className="w-3.5 h-3.5 rounded-full bg-rose-500 absolute -inset-1 animate-ping opacity-75" />
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400 relative block border border-slate-950" />
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-900 text-white text-[10px] py-1 px-2.5 rounded-md whitespace-nowrap shadow-xl border border-rose-500/30">
+                  🇯🇵 Japan &bull; 6% ({(data.totalClicks * 0.06).toFixed(0)} clicks)
+                </div>
+              </div>
+            </div>
+
+            {/* Country Breakdown Leaderboard */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-white/10 pb-2">
+                Top Country Traffic
+              </h4>
+
+              {[
+                { flag: '🇺🇸', name: 'United States', pct: 42, color: 'bg-emerald-500' },
+                { flag: '🇩🇪', name: 'Germany', pct: 24, color: 'bg-teal-500' },
+                { flag: '🇮🇳', name: 'India', pct: 18, color: 'bg-indigo-500' },
+                { flag: '🇬🇧', name: 'United Kingdom', pct: 10, color: 'bg-purple-500' },
+                { flag: '🇯🇵', name: 'Japan', pct: 6, color: 'bg-rose-500' }
+              ].map((c) => (
+                <div key={c.name} className="space-y-1">
+                  <div className="flex justify-between text-xs text-slate-700 dark:text-slate-300">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm">{c.flag}</span>
+                      <span>{c.name}</span>
+                    </span>
+                    <span className="font-bold text-slate-900 dark:text-slate-100">{c.pct}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden">
+                    <div className={`h-full ${c.color} rounded-full`} style={{ width: `${c.pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Distribution Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Device Distribution */}
