@@ -1,0 +1,22 @@
+{
+  "buildCommand": "pnpm --filter server build && pnpm --filter client build",
+  "outputDirectory": "client/dist",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api"
+    },
+    {
+      "source": "/health",
+      "destination": "/api"
+    },
+    {
+      "source": "/:shortCode([a-zA-Z]{6})",
+      "destination": "/api"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}
