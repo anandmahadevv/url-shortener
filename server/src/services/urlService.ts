@@ -53,7 +53,7 @@ class MemoryStore {
     return this.urlsByCode.get(shortCode) || null;
   }
 
-  async create(data: { shortCode: string; longUrl: string; expiresAt: Date | null; customAlias: boolean }) {
+  async create(data: { shortCode: string; longUrl: string; expiresAt: Date | null; customAlias: boolean; userId?: string | null }) {
     const id = this.autoIncrementId++;
     const record = {
       id,
@@ -62,13 +62,14 @@ class MemoryStore {
       createdAt: new Date(),
       expiresAt: data.expiresAt,
       clickCount: 0,
-      customAlias: data.customAlias
+      customAlias: data.customAlias,
+      userId: data.userId || null
     };
     this.urlsByCode.set(data.shortCode, record);
     return record;
   }
 
-  async createAutoBase62(data: { longUrl: string; expiresAt: Date | null }) {
+  async createAutoBase62(data: { longUrl: string; expiresAt: Date | null; userId?: string | null }) {
     const id = this.autoIncrementId++;
     const generatedCode = encodeBase62(id);
     const record = {
@@ -78,7 +79,8 @@ class MemoryStore {
       createdAt: new Date(),
       expiresAt: data.expiresAt,
       clickCount: 0,
-      customAlias: false
+      customAlias: false,
+      userId: data.userId || null
     };
     this.urlsByCode.set(generatedCode, record);
     return record;
@@ -223,7 +225,8 @@ export class UrlService {
           shortCode: customAlias,
           longUrl,
           expiresAt: parsedExpiresAt,
-          customAlias: true
+          customAlias: true,
+          userId: options.userId
         });
 
         await redisCache.set(created.shortCode, created.longUrl);
@@ -242,7 +245,8 @@ export class UrlService {
 
       const created = await memoryDb.createAutoBase62({
         longUrl,
-        expiresAt: parsedExpiresAt
+        expiresAt: parsedExpiresAt,
+        userId: options.userId
       });
 
       await redisCache.set(created.shortCode, created.longUrl);
