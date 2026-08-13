@@ -6,6 +6,7 @@ import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { NotFoundPage } from './components/NotFoundPage';
 import { ThemeSwitcher, ThemeMode } from './components/ThemeSwitcher';
 import { ToastContainer, ToastMessage } from './components/Toast';
+import { MinimalAd } from './components/MinimalAd';
 import { Zap, Cpu, Link2, BarChart2, Sparkles, Terminal, Globe, Tag } from 'lucide-react';
 
 interface UrlItem {
@@ -331,6 +332,9 @@ export function App() {
           <p className="text-slate-500 dark:text-slate-400">&copy; 2026 Rebrandly / niat.me Engine.</p>
         </div>
       </footer>
+
+      {/* Minimal ad pop-up */}
+      <MinimalAd />
     </div>
   );
 }
