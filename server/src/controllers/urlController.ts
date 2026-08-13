@@ -27,14 +27,12 @@ export const shortenUrlController = async (req: Request, res: Response, next: Ne
       }
     }
 
-    const userId = (req as any).user?.userId;
     const baseUrl = getBaseUrl(req);
     const result = await urlService.shortenUrl(
       {
         longUrl: urlVal.cleanUrl!,
         customAlias: customAlias ? customAlias.trim() : undefined,
-        expiresAt,
-        userId
+        expiresAt
       },
       baseUrl
     );

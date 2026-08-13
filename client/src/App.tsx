@@ -5,9 +5,7 @@ import { UrlList } from './components/UrlList';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { NotFoundPage } from './components/NotFoundPage';
 import { ThemeSwitcher, ThemeMode } from './components/ThemeSwitcher';
-import { AuthModal } from './components/AuthModal';
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser, useAuth } from '@clerk/clerk-react';
-import { Zap, Cpu, Link2, BarChart2, Sparkles, Terminal, User as UserIcon, LogOut, LogIn, Key, ShieldCheck } from 'lucide-react';
+import { Zap, Cpu, Link2, BarChart2, Sparkles, Terminal } from 'lucide-react';
 
 interface UrlItem {
   id: string;
@@ -20,40 +18,12 @@ interface UrlItem {
   customAlias: boolean;
 }
 
-interface LocalUser {
-  id: string;
-  email: string;
-  name?: string;
-}
-
-const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_aG9uZXN0LXBlbmd1aW4tMjcuY2xlcmsuYWNjb3VudHMuZGV2JA';
-const CLERK_ENABLED = Boolean(CLERK_PUBLISHABLE_KEY);
-
 export function App() {
   const [activeTab, setActiveTab] = useState<'shortener' | 'analytics' | 'api'>('shortener');
   const [currentResult, setCurrentResult] = useState<UrlItem | null>(null);
   const [urls, setUrls] = useState<UrlItem[]>([]);
-  const [localUser, setLocalUser] = useState<LocalUser | null>(null);
-  const [showLocalAuthModal, setShowLocalAuthModal] = useState(false);
   const [isNotFoundPage, setIsNotFoundPage] = useState(false);
   const [notFoundCode, setNotFoundCode] = useState<string | undefined>(undefined);
-
-  // Clerk Auth Hooks (safely handled if Clerk is disabled)
-  let clerkUser: any = null;
-  let clerkAuth: any = null;
-  try {
-    if (CLERK_ENABLED) {
-      clerkUser = useUser();
-      clerkAuth = useAuth();
-    }
-  } catch (err) {
-    // Fallback if not inside ClerkProvider
-  }
-
-  const isSignedIn = CLERK_ENABLED ? (clerkUser?.isSignedIn ?? false) : Boolean(localUser);
-  const activeUserEmail = CLERK_ENABLED
-    ? (clerkUser?.user?.primaryEmailAddress?.emailAddress || clerkUser?.user?.fullName || 'User')
-    : (localUser?.name || localUser?.email.split('@')[0] || 'User');
 
   // Theme Management
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
@@ -95,104 +65,29 @@ export function App() {
     }
   }, []);
 
-  // Fetch logged-in user links
+  // Fetch recent URLs
   useEffect(() => {
-    const loadUserUrls = async () => {
-      if (CLERK_ENABLED && clerkUser?.isSignedIn && clerkAuth?.getToken) {
-        try {
-          const token = await clerkAuth.getToken();
-          if (token) {
-            fetchUserUrls(token);
-            return;
-          }
-        } catch (err) {
-          console.error('Error fetching Clerk token', err);
+    const fetchRecentUrls = async () => {
+      try {
+        const res = await fetch('/api/urls');
+        if (res.ok) {
+          const data = await res.json();
+          setUrls(data);
         }
-      }
-
-      const token = localStorage.getItem('swift_token');
-      if (token) {
-        fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.user) {
-              setLocalUser(data.user);
-              fetchUserUrls(token);
-            } else {
-              localStorage.removeItem('swift_token');
-              loadLocalUrls();
-            }
-          })
-          .catch(() => {
-            localStorage.removeItem('swift_token');
-            loadLocalUrls();
-          });
-      } else {
-        loadLocalUrls();
+      } catch (err) {
+        console.error('Failed to fetch recent URLs', err);
       }
     };
 
-    loadUserUrls();
-  }, [clerkUser?.isSignedIn]);
+    fetchRecentUrls();
+  }, []);
 
-  const loadLocalUrls = () => {
-    const saved = localStorage.getItem('swift_urls');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setUrls(parsed);
-        refreshAllStats(parsed);
-      } catch (err) {
-        console.error('Error parsing stored URLs', err);
-      }
-    }
-  };
-
-  const fetchUserUrls = async (token: string) => {
+  const refreshAllStats = async () => {
     try {
-      const res = await fetch('/api/user/urls', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetch('/api/urls');
       if (res.ok) {
         const data = await res.json();
         setUrls(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch user URLs', err);
-    }
-  };
-
-  const refreshAllStats = async (items: UrlItem[]) => {
-    try {
-      const updated = await Promise.all(
-        items.map(async (item) => {
-          try {
-            const res = await fetch(`/api/stats/${item.shortCode}`);
-            if (res.ok) {
-              const text = await res.text();
-              try {
-                const data = JSON.parse(text);
-                return {
-                  ...item,
-                  shortUrl: data.shortUrl || item.shortUrl,
-                  clickCount: data.clickCount
-                };
-              } catch {
-                // ignore
-              }
-            }
-          } catch (err) {
-            // retain existing
-          }
-          return item;
-        })
-      );
-
-      setUrls(updated);
-      if (!isSignedIn) {
-        localStorage.setItem('swift_urls', JSON.stringify(updated));
       }
     } catch (err) {
       console.error('Failed to refresh stats', err);
@@ -201,54 +96,10 @@ export function App() {
 
   const handleShortenSuccess = (newUrl: UrlItem) => {
     setCurrentResult(newUrl);
-
     setUrls((prev) => {
       const filtered = prev.filter((u) => u.shortCode !== newUrl.shortCode);
-      const nextList = [newUrl, ...filtered];
-      if (!isSignedIn) {
-        localStorage.setItem('swift_urls', JSON.stringify(nextList));
-      }
-      return nextList;
+      return [newUrl, ...filtered];
     });
-  };
-
-  const handleLocalAuthSuccess = (user: LocalUser, token: string) => {
-    localStorage.setItem('swift_token', token);
-    setLocalUser(user);
-    fetchUserUrls(token);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('swift_token');
-    setLocalUser(null);
-    loadLocalUrls();
-  };
-
-  const handleDeleteUrl = async (shortCode: string) => {
-    let token = localStorage.getItem('swift_token');
-    if (CLERK_ENABLED && clerkAuth?.getToken) {
-      try {
-        const clerkToken = await clerkAuth.getToken();
-        if (clerkToken) token = clerkToken;
-      } catch (err) {
-        // fallback to local token
-      }
-    }
-
-    if (!token) return;
-
-    try {
-      const res = await fetch(`/api/urls/${shortCode}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (res.ok) {
-        setUrls((prev) => prev.filter((u) => u.shortCode !== shortCode));
-      }
-    } catch (err) {
-      console.error('Failed to delete URL', err);
-    }
   };
 
   if (isNotFoundPage) {
@@ -321,68 +172,10 @@ export function App() {
           </div>
 
           <div className="flex items-center gap-2.5">
-            {/* User Profile / Auth Section */}
-            {CLERK_ENABLED ? (
-              <>
-                <SignedIn>
-                  <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30 text-xs font-semibold">
-                      {activeUserEmail}
-                    </span>
-                    <UserButton afterSignOutUrl="/" />
-                  </div>
-                </SignedIn>
-
-                <SignedOut>
-                  <SignInButton mode="modal">
-                    <button className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-800 text-xs font-bold transition-all cursor-pointer shadow-sm">
-                      <LogIn className="w-3.5 h-3.5" />
-                      <span>Sign In</span>
-                    </button>
-                  </SignInButton>
-                </SignedOut>
-              </>
-            ) : (
-              <>
-                {localUser ? (
-                  <div className="flex items-center gap-2">
-                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30 text-xs font-semibold">
-                      <UserIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>{activeUserEmail}</span>
-                    </div>
-
-                    <button
-                      onClick={handleLogout}
-                      className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950 dark:hover:text-rose-400 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
-                      title="Sign Out"
-                    >
-                      <LogOut className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowLocalAuthModal(true)}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-800 text-xs font-bold transition-all cursor-pointer shadow-sm"
-                  >
-                    <LogIn className="w-3.5 h-3.5" />
-                    <span>Sign In</span>
-                  </button>
-                )}
-              </>
-            )}
-
             <ThemeSwitcher themeMode={themeMode} onChangeTheme={setThemeMode} />
           </div>
         </header>
       </div>
-
-      {/* Local Auth Modal Popup */}
-      {showLocalAuthModal && (
-        <AuthModal
-          onClose={() => setShowLocalAuthModal(false)}
-          onAuthSuccess={handleLocalAuthSuccess}
-        />
-      )}
 
       <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-10 pb-24 flex-grow">
         {activeTab === 'shortener' && (
@@ -391,8 +184,7 @@ export function App() {
             {/* Hero Header Banner */}
             <div className="text-center space-y-4 pt-2">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold uppercase tracking-wider">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                {CLERK_ENABLED ? 'Clerk Enterprise Auth Activated' : 'SwiftURL Engine &bull; Redis Hot Cache &bull; Postgres DB'}
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> SwiftURL Engine &bull; Redis Hot Cache &bull; Postgres DB
               </div>
 
               <h1 className="text-3xl sm:text-5xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white leading-tight">
@@ -405,16 +197,6 @@ export function App() {
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-xl mx-auto font-sans leading-relaxed">
                 Fast, deterministic Base62 short links, dual-layer caching, non-blocking click telemetry, and dynamic QR Studio.
               </p>
-
-              {/* Clerk Key Setup Notice (shown if key not yet added) */}
-              {!CLERK_ENABLED && (
-                <div className="max-w-xl mx-auto mt-4 bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800 p-3 rounded-2xl flex items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <Key className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span>To activate <strong>Clerk Auth</strong>, add <code>VITE_CLERK_PUBLISHABLE_KEY=pk_test_...</code> in your <code>.env</code> file.</span>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Main Shorten Form */}
@@ -436,9 +218,9 @@ export function App() {
               </div>
 
               <div className="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Auth Engine</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Algorithm</span>
                 <span className="text-sm font-bold font-sans text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-1">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> {CLERK_ENABLED ? 'Clerk SSO' : 'JWT / Local'}
+                  <Cpu className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Base62 Key
                 </span>
               </div>
 
@@ -453,14 +235,7 @@ export function App() {
             {/* List of Shortened URLs */}
             <UrlList
               urls={urls}
-              onRefreshStats={() => {
-                if (CLERK_ENABLED && clerkAuth?.getToken) {
-                  clerkAuth.getToken().then((token: string) => fetchUserUrls(token));
-                } else {
-                  refreshAllStats(urls);
-                }
-              }}
-              onDeleteUrl={isSignedIn ? handleDeleteUrl : undefined}
+              onRefreshStats={refreshAllStats}
             />
           </div>
         )}
@@ -478,7 +253,7 @@ export function App() {
                   REST API Interface Specification
                 </h2>
                 <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-full border border-emerald-500/30">
-                  Clerk & JWT Ready
+                  v1.0 Public API
                 </span>
               </div>
 
@@ -534,7 +309,7 @@ export function App() {
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-            <span>SwiftURL Infrastructure &bull; Express + React + Clerk Auth</span>
+            <span>SwiftURL Infrastructure &bull; Express + React + Tailwind</span>
           </div>
           <p className="text-slate-500 dark:text-slate-400">&copy; 2026 SwiftURL / niat.me Engine.</p>
         </div>

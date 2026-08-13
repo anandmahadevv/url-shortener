@@ -1,28 +1,16 @@
 import React, { useState } from 'react';
 import { Link2, Sparkles, Calendar, Tag, AlertCircle, ArrowUpRight, Zap, Database } from 'lucide-react';
-import { useAuth } from '@clerk/clerk-react';
 
 interface ShortenFormProps {
   onShortenSuccess: (result: any) => void;
 }
 
-const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_aG9uZXN0LXBlbmd1aW4tMjcuY2xlcmsuYWNjb3VudHMuZGV2JA';
-const CLERK_ENABLED = Boolean(CLERK_PUBLISHABLE_KEY);
-
 export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) => {
   const [longUrl, setLongUrl] = useState('');
   const [customAlias, setCustomAlias] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  let clerkAuth: any = null;
-  try {
-    if (CLERK_ENABLED) clerkAuth = useAuth();
-  } catch (err) {
-    // fallback
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,24 +24,9 @@ export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) =>
     setLoading(true);
 
     try {
-      let token = localStorage.getItem('swift_token');
-      if (CLERK_ENABLED && clerkAuth?.getToken) {
-        try {
-          const clerkToken = await clerkAuth.getToken();
-          if (clerkToken) token = clerkToken;
-        } catch (err) {
-          // ignore
-        }
-      }
-
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
       const response = await fetch('/api/shorten', {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           longUrl: longUrl.trim(),
           customAlias: customAlias.trim() || undefined,
@@ -61,16 +34,16 @@ export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) =>
         })
       });
 
+      const text = await response.text();
       let data: any = {};
-      const responseText = await response.text();
       try {
-        data = JSON.parse(responseText);
+        data = JSON.parse(text);
       } catch (e) {
-        data = { error: responseText || `HTTP ${response.status}: Server response was empty or non-JSON.` };
+        data = { error: 'Invalid server response.' };
       }
 
       if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}: Failed to shorten URL`);
+        throw new Error(data.error || 'Failed to shorten URL');
       }
 
       onShortenSuccess(data);
@@ -78,119 +51,96 @@ export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) =>
       setCustomAlias('');
       setExpiresAt('');
     } catch (err: any) {
-      setError(err.message || 'An error occurred while shortening the URL');
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto bg-white dark:bg-[#111726] p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-lg shadow-slate-900/5 dark:shadow-black/40 animate-slide-up transition-colors duration-300">
-      {/* Top Status Header */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800 relative z-10">
-        <div className="flex items-center gap-2">
-          <span className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
-            Engine Ready
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400 font-mono">
-          <span className="flex items-center gap-1.5 font-medium"><Zap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Redis Hot</span>
-          <span className="text-slate-300 dark:text-slate-700">&bull;</span>
-          <span className="flex items-center gap-1.5 font-medium"><Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Postgres</span>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
-        {error && (
-          <div className="flex items-center gap-3 bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 px-4 py-3 rounded-xl text-sm font-medium">
-            <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
+    <div className="w-full max-w-3xl mx-auto bg-white/90 dark:bg-[#111726]/95 backdrop-blur-2xl p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-900/5 dark:shadow-black/50 transition-colors">
+      <form onSubmit={handleSubmit} className="space-y-5 font-sans">
+        
+        {/* Main URL Input */}
         <div>
-          <label htmlFor="longUrl" className="block text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-2 flex items-center justify-between">
-            <span>Destination URL</span>
-            <span className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold lowercase">* required</span>
+          <label htmlFor="longUrl" className="block text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-2">
+            Destination URL
           </label>
-
-          <div className="relative flex items-center bg-slate-50 dark:bg-[#0b0f19] border border-slate-300 dark:border-slate-700 rounded-2xl focus-within:border-emerald-500 focus-within:bg-white dark:focus-within:bg-[#0b0f19] focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all shadow-sm">
-            <div className="pl-4 text-slate-400 pointer-events-none">
-              <Link2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
+          <div className="relative flex items-center bg-slate-50 dark:bg-[#0b0f19] border border-slate-300 dark:border-slate-700 rounded-2xl focus-within:border-emerald-500 transition-all">
+            <Link2 className="w-5 h-5 text-slate-400 dark:text-slate-500 ml-4 shrink-0" />
             <input
               id="longUrl"
-              type="url"
-              placeholder="https://developer.mozilla.org/en-US/docs/Web/JavaScript"
+              type="text"
+              placeholder="https://example.com/very/long/url/link"
               value={longUrl}
               onChange={(e) => setLongUrl(e.target.value)}
-              required
-              className="w-full pl-3 pr-4 py-4 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none text-sm sm:text-base font-sans font-medium"
+              className="w-full px-4 py-3.5 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none text-sm font-sans font-medium"
             />
           </div>
         </div>
 
-        {/* Toggle Custom Options Accordion */}
-        <div className="flex items-center justify-between pt-1">
-          <button
-            type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 transition-colors flex items-center gap-1.5 focus:outline-none cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            {showAdvanced ? '[-] Hide Custom Parameters' : '[+] Custom Alias & Expiration Rules'}
-          </button>
-        </div>
-
-        {/* Advanced Inputs */}
-        {showAdvanced && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-slate-800 animate-slide-up">
-            <div>
-              <label htmlFor="customAlias" className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Custom Alias (Optional)
-              </label>
+        {/* Option Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Custom Alias Input */}
+          <div>
+            <label htmlFor="customAlias" className="block text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              Custom Alias (Optional)
+            </label>
+            <div className="flex items-center bg-slate-50 dark:bg-[#0b0f19] border border-slate-300 dark:border-slate-700 rounded-2xl focus-within:border-emerald-500 transition-all font-mono text-xs">
+              <span className="pl-4 text-slate-400 dark:text-slate-500 select-none">niat.me/</span>
               <input
                 id="customAlias"
                 type="text"
-                placeholder="e.g. my-custom-alias"
+                placeholder="my-custom-link"
                 value={customAlias}
                 onChange={(e) => setCustomAlias(e.target.value)}
-                className="w-full px-3.5 py-3 bg-slate-50 dark:bg-[#0b0f19] border border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#0b0f19] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none text-sm font-mono transition-all"
+                className="w-full pr-4 py-3 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
               />
             </div>
+          </div>
 
-            <div>
-              <label htmlFor="expiresAt" className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Expiration Rule (Optional)
-              </label>
+          {/* Expiration Date Input */}
+          <div>
+            <label htmlFor="expiresAt" className="block text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              Link Expiration (Optional)
+            </label>
+            <div className="flex items-center bg-slate-50 dark:bg-[#0b0f19] border border-slate-300 dark:border-slate-700 rounded-2xl focus-within:border-emerald-500 transition-all">
               <input
                 id="expiresAt"
                 type="datetime-local"
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.target.value)}
-                className="w-full px-3.5 py-3 bg-slate-50 dark:bg-[#0b0f19] border border-slate-300 dark:border-slate-700 focus:border-emerald-500 focus:bg-white dark:focus:bg-[#0b0f19] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none text-sm font-sans transition-all"
+                className="w-full px-4 py-3 bg-transparent text-slate-900 dark:text-white focus:outline-none text-xs font-sans"
               />
             </div>
           </div>
+        </div>
+
+        {/* Error Alert */}
+        {error && (
+          <div className="flex items-center gap-3 bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 px-4 py-3 rounded-2xl text-xs font-medium">
+            <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+            <span>{error}</span>
+          </div>
         )}
 
-        {/* Primary Action Button */}
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-sans text-sm font-bold uppercase tracking-wider flex items-center justify-between shadow-lg shadow-emerald-600/20 active:scale-[0.99] transition-all cursor-pointer group"
+          className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-bold text-sm uppercase tracking-wider transition-all duration-200 shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer"
         >
-          <span>{loading ? 'Provisioning Base62 Code...' : 'Shorten URL Now'}</span>
-          
-          <div className="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center group-hover:translate-x-1 transition-transform shrink-0">
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <ArrowUpRight className="w-4 h-4" />
-            )}
-          </div>
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              <span>Shorten URL</span>
+              <ArrowUpRight className="w-4 h-4 ml-1" />
+            </>
+          )}
         </button>
       </form>
     </div>
