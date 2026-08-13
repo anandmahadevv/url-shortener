@@ -6,6 +6,7 @@ export interface ShortenOptions {
   longUrl: string;
   customAlias?: string;
   expiresAt?: string | Date;
+  userId?: string;
 }
 
 export interface UrlResponse {
@@ -152,7 +153,8 @@ export class UrlService {
             shortCode: customAlias,
             longUrl,
             expiresAt: parsedExpiresAt,
-            customAlias: true
+            customAlias: true,
+            userId: options.userId || null
           }
         });
 
@@ -180,7 +182,8 @@ export class UrlService {
           shortCode: tempCode,
           longUrl,
           expiresAt: parsedExpiresAt,
-          customAlias: false
+          customAlias: false,
+          userId: options.userId || null
         }
       });
 
@@ -451,6 +454,49 @@ export class UrlService {
       },
       dailyTrends
     };
+  }
+
+  /**
+   * Fetches URLs created by a specific user.
+   */
+  async getUserUrls(userId: string, baseUrl: string): Promise<UrlResponse[]> {
+    let records: any[] = [];
+    try {
+      records = await prisma.url.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' }
+      });
+    } catch (err) {
+      records = (await memoryDb.getAll()).filter(u => u.userId === userId);
+    }
+
+    return records.map(record => ({
+      id: record.id.toString(),
+      shortCode: record.shortCode,
+      longUrl: record.longUrl,
+      shortUrl: `${baseUrl}/${record.shortCode}`,
+      createdAt: record.createdAt,
+      expiresAt: record.expiresAt,
+      clickCount: record.clickCount,
+      customAlias: record.customAlias
+    }));
+  }
+
+  /**
+   * Deletes a short URL owned by a user.
+   */
+  async deleteUserUrl(shortCode: string, userId: string): Promise<boolean> {
+    try {
+      const record = await prisma.url.findUnique({ where: { shortCode } });
+      if (!record || record.userId !== userId) {
+        return false;
+      }
+      await prisma.url.delete({ where: { shortCode } });
+      await redisCache.del(shortCode);
+      return true;
+    } catch (err) {
+      return false;
+    }
   }
 }
 

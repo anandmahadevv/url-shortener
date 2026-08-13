@@ -5,7 +5,8 @@ import { UrlList } from './components/UrlList';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { NotFoundPage } from './components/NotFoundPage';
 import { ThemeSwitcher, ThemeMode } from './components/ThemeSwitcher';
-import { Zap, Cpu, Link2, BarChart2, Sparkles, Terminal } from 'lucide-react';
+import { AuthModal } from './components/AuthModal';
+import { Zap, Cpu, Link2, BarChart2, Sparkles, Terminal, User as UserIcon, LogOut, LogIn } from 'lucide-react';
 
 interface UrlItem {
   id: string;
@@ -18,10 +19,18 @@ interface UrlItem {
   customAlias: boolean;
 }
 
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+}
+
 export function App() {
   const [activeTab, setActiveTab] = useState<'shortener' | 'analytics' | 'api'>('shortener');
   const [currentResult, setCurrentResult] = useState<UrlItem | null>(null);
   const [urls, setUrls] = useState<UrlItem[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [isNotFoundPage, setIsNotFoundPage] = useState(false);
   const [notFoundCode, setNotFoundCode] = useState<string | undefined>(undefined);
 
@@ -65,7 +74,33 @@ export function App() {
     }
   }, []);
 
+  // Fetch logged-in user session
   useEffect(() => {
+    const token = localStorage.getItem('swift_token');
+    if (token) {
+      fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) {
+            setCurrentUser(data.user);
+            fetchUserUrls(token);
+          } else {
+            localStorage.removeItem('swift_token');
+            loadLocalUrls();
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('swift_token');
+          loadLocalUrls();
+        });
+    } else {
+      loadLocalUrls();
+    }
+  }, []);
+
+  const loadLocalUrls = () => {
     const saved = localStorage.getItem('swift_urls');
     if (saved) {
       try {
@@ -76,7 +111,21 @@ export function App() {
         console.error('Error parsing stored URLs', err);
       }
     }
-  }, []);
+  };
+
+  const fetchUserUrls = async (token: string) => {
+    try {
+      const res = await fetch('/api/user/urls', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUrls(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch user URLs', err);
+    }
+  };
 
   const refreshAllStats = async (items: UrlItem[]) => {
     try {
@@ -105,7 +154,9 @@ export function App() {
       );
 
       setUrls(updated);
-      localStorage.setItem('swift_urls', JSON.stringify(updated));
+      if (!currentUser) {
+        localStorage.setItem('swift_urls', JSON.stringify(updated));
+      }
     } catch (err) {
       console.error('Failed to refresh stats', err);
     }
@@ -117,9 +168,41 @@ export function App() {
     setUrls((prev) => {
       const filtered = prev.filter((u) => u.shortCode !== newUrl.shortCode);
       const nextList = [newUrl, ...filtered];
-      localStorage.setItem('swift_urls', JSON.stringify(nextList));
+      if (!currentUser) {
+        localStorage.setItem('swift_urls', JSON.stringify(nextList));
+      }
       return nextList;
     });
+  };
+
+  const handleAuthSuccess = (user: User, token: string) => {
+    localStorage.setItem('swift_token', token);
+    setCurrentUser(user);
+    fetchUserUrls(token);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('swift_token');
+    setCurrentUser(null);
+    loadLocalUrls();
+  };
+
+  const handleDeleteUrl = async (shortCode: string) => {
+    const token = localStorage.getItem('swift_token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`/api/urls/${shortCode}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        setUrls((prev) => prev.filter((u) => u.shortCode !== shortCode));
+      }
+    } catch (err) {
+      console.error('Failed to delete URL', err);
+    }
   };
 
   if (isNotFoundPage) {
@@ -191,17 +274,51 @@ export function App() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            {/* User Profile / Auth Button */}
+            {currentUser ? (
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30 text-xs font-semibold">
+                  <UserIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{currentUser.name || currentUser.email.split('@')[0]}</span>
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950 dark:hover:text-rose-400 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-800 text-xs font-bold transition-all cursor-pointer shadow-sm"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
+            )}
+
             <ThemeSwitcher themeMode={themeMode} onChangeTheme={setThemeMode} />
           </div>
         </header>
       </div>
 
+      {/* Auth Modal Popup */}
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+          onAuthSuccess={handleAuthSuccess}
+        />
+      )}
+
       <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-10 pb-24 flex-grow">
         {activeTab === 'shortener' && (
           <div className="space-y-10 animate-slide-up">
             
-            {/* Hero Header Banner - Placed First for Clear Visual Hierarchy */}
+            {/* Hero Header Banner */}
             <div className="text-center space-y-4 pt-2">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> SwiftURL Engine &bull; Redis Hot Cache &bull; Postgres DB
@@ -227,24 +344,24 @@ export function App() {
 
             {/* Metric Architecture Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-              <div className="bg-white/90 dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+              <div className="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Provisioned Links</span>
                 <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-white">{urls.length}</span>
               </div>
 
-              <div className="bg-white/90 dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+              <div className="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Click Telemetry</span>
                 <span className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{totalClicks}</span>
               </div>
 
-              <div className="bg-white/90 dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+              <div className="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Algorithm</span>
                 <span className="text-sm font-bold font-sans text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-1">
                   <Cpu className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Base62 Key
                 </span>
               </div>
 
-              <div className="bg-white/90 dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+              <div className="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Caching Layer</span>
                 <span className="text-sm font-bold font-sans text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-1">
                   <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Redis Hot
@@ -253,7 +370,11 @@ export function App() {
             </div>
 
             {/* List of Shortened URLs */}
-            <UrlList urls={urls} onRefreshStats={() => refreshAllStats(urls)} />
+            <UrlList
+              urls={urls}
+              onRefreshStats={() => currentUser ? fetchUserUrls(localStorage.getItem('swift_token') || '') : refreshAllStats(urls)}
+              onDeleteUrl={currentUser ? handleDeleteUrl : undefined}
+            />
           </div>
         )}
 
@@ -262,8 +383,8 @@ export function App() {
 
         {/* API Specs Tab */}
         {activeTab === 'api' && (
-          <div className="w-full max-w-3xl mx-auto bg-white/90 dark:bg-[#111726] p-2 sm:p-3 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl backdrop-blur-xl animate-slide-up transition-colors">
-            <div className="bg-slate-50/50 dark:bg-[#0b0f19] rounded-2xl p-6 sm:p-8 doppelrand-core space-y-6 transition-colors">
+          <div className="w-full max-w-3xl mx-auto bg-white dark:bg-[#111726] p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl backdrop-blur-xl animate-slide-up transition-colors">
+            <div className="space-y-6 transition-colors">
               <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
                 <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2 font-display">
                   <Terminal className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -275,7 +396,7 @@ export function App() {
               </div>
 
               {/* Endpoint 1 */}
-              <div className="bg-white dark:bg-[#111726] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="bg-slate-50 dark:bg-[#0b0f19] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-mono">POST</span>
                   <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">/api/shorten</span>
@@ -291,7 +412,7 @@ export function App() {
               </div>
 
               {/* Endpoint 2 */}
-              <div className="bg-white dark:bg-[#111726] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="bg-slate-50 dark:bg-[#0b0f19] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-indigo-500/20 text-indigo-800 dark:text-indigo-300 border border-indigo-500/30 font-mono">GET</span>
                   <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">/:shortCode</span>
@@ -300,7 +421,7 @@ export function App() {
               </div>
 
               {/* Endpoint 3 */}
-              <div className="bg-white dark:bg-[#111726] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="bg-slate-50 dark:bg-[#0b0f19] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30 font-mono">GET</span>
                   <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">/api/stats/:shortCode</span>
@@ -309,7 +430,7 @@ export function App() {
               </div>
 
               {/* Endpoint 4 */}
-              <div className="bg-white dark:bg-[#111726] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="bg-slate-50 dark:bg-[#0b0f19] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 font-mono">GET</span>
                   <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">/api/analytics/overview</span>

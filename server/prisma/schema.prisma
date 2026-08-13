@@ -8,6 +8,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  urls      Url[]
+}
+
 model Url {
   id          BigInt    @id @default(autoincrement())
   shortCode   String    @unique
@@ -16,6 +26,9 @@ model Url {
   expiresAt   DateTime?
   clickCount  Int       @default(0)
   customAlias Boolean   @default(false)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([shortCode])
+  @@index([userId])
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, RefreshCw, BarChart2, ExternalLink, Globe, Clock } from 'lucide-react';
+import { Copy, Check, RefreshCw, BarChart2, ExternalLink, Globe, Clock, Trash2 } from 'lucide-react';
 
 interface UrlItem {
   id: string;
@@ -15,9 +15,10 @@ interface UrlItem {
 interface UrlListProps {
   urls: UrlItem[];
   onRefreshStats: () => void;
+  onDeleteUrl?: (shortCode: string) => void;
 }
 
-export const UrlList: React.FC<UrlListProps> = ({ urls, onRefreshStats }) => {
+export const UrlList: React.FC<UrlListProps> = ({ urls, onRefreshStats, onDeleteUrl }) => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -114,7 +115,7 @@ export const UrlList: React.FC<UrlListProps> = ({ urls, onRefreshStats }) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+              <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
                 <div className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30 rounded-xl font-mono">
                   <BarChart2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span className="text-xs font-bold">
@@ -133,6 +134,16 @@ export const UrlList: React.FC<UrlListProps> = ({ urls, onRefreshStats }) => {
                     <Copy className="w-4 h-4" />
                   )}
                 </button>
+
+                {onDeleteUrl && (
+                  <button
+                    onClick={() => onDeleteUrl(item.shortCode)}
+                    className="p-2.5 bg-white hover:bg-rose-600 hover:text-white dark:bg-slate-800 dark:hover:bg-rose-600 dark:hover:text-white text-slate-500 dark:text-slate-400 hover:border-rose-600 border border-slate-300 dark:border-slate-700 rounded-xl transition-all cursor-pointer shadow-xs"
+                    title="Delete link"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           );
