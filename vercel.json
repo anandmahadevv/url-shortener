@@ -23,7 +23,11 @@
       "dest": "api/index.ts"
     },
     {
-      "src": "/([a-zA-Z]{6})",
+      "src": "/(assets/.*|vite.svg|favicon.ico)",
+      "dest": "client/$1"
+    },
+    {
+      "src": "/([a-zA-Z0-9_-]{2,50})",
       "dest": "api/index.ts"
     },
     {
