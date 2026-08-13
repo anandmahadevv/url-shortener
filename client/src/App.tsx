@@ -336,7 +336,7 @@ export function App() {
                   <SignInButton mode="modal">
                     <button className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-800 text-xs font-bold transition-all cursor-pointer shadow-sm">
                       <LogIn className="w-3.5 h-3.5" />
-                      <span>Clerk Sign In</span>
+                      <span>Sign In</span>
                     </button>
                   </SignInButton>
                 </SignedOut>
