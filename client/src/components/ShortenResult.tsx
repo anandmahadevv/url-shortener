@@ -11,10 +11,9 @@ interface ShortenResultProps {
     expiresAt?: string | null;
     customAlias?: boolean;
   };
-  onShowToast?: (title: string, description?: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export const ShortenResult: React.FC<ShortenResultProps> = ({ result, onShowToast }) => {
+export const ShortenResult: React.FC<ShortenResultProps> = ({ result }) => {
   const [copied, setCopied] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
 
@@ -22,7 +21,6 @@ export const ShortenResult: React.FC<ShortenResultProps> = ({ result, onShowToas
     try {
       await navigator.clipboard.writeText(result.shortUrl);
       setCopied(true);
-      if (onShowToast) onShowToast('Short Link Copied', result.shortUrl);
       setTimeout(() => setCopied(false), 2500);
     } catch (err) {
       console.error('Failed to copy to clipboard', err);
@@ -93,7 +91,6 @@ export const ShortenResult: React.FC<ShortenResultProps> = ({ result, onShowToas
           shortUrl={result.shortUrl}
           shortCode={result.shortCode}
           onClose={() => setShowQrModal(false)}
-          onShowToast={onShowToast}
         />
       )}
 
