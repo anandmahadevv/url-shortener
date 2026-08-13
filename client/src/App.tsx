@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ShortenForm } from './components/ShortenForm';
 import { ShortenResult } from './components/ShortenResult';
 import { UrlList } from './components/UrlList';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { NotFoundPage } from './components/NotFoundPage';
 import { ThemeSwitcher, ThemeMode } from './components/ThemeSwitcher';
+import { ToastContainer, ToastMessage } from './components/Toast';
 import { Zap, Cpu, Link2, BarChart2, Sparkles, Terminal } from 'lucide-react';
 
 interface UrlItem {
@@ -22,8 +23,18 @@ export function App() {
   const [activeTab, setActiveTab] = useState<'shortener' | 'analytics' | 'api'>('shortener');
   const [currentResult, setCurrentResult] = useState<UrlItem | null>(null);
   const [urls, setUrls] = useState<UrlItem[]>([]);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [isNotFoundPage, setIsNotFoundPage] = useState(false);
   const [notFoundCode, setNotFoundCode] = useState<string | undefined>(undefined);
+
+  const showToast = useCallback((title: string, description?: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Math.random().toString(36).substring(2);
+    setToasts((prev) => [...prev, { id, title, description, type }]);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   // Theme Management
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
@@ -96,6 +107,7 @@ export function App() {
 
   const handleShortenSuccess = (newUrl: UrlItem) => {
     setCurrentResult(newUrl);
+    showToast('Short Link Provisioned', newUrl.shortUrl, 'success');
     setUrls((prev) => {
       const filtered = prev.filter((u) => u.shortCode !== newUrl.shortCode);
       return [newUrl, ...filtered];
@@ -117,7 +129,11 @@ export function App() {
   const totalClicks = urls.reduce((sum, u) => sum + (u.clickCount || 0), 0);
 
   return (
-    <div className="min-h-screen bg-ethereal-mesh text-slate-900 dark:text-slate-100 flex flex-col justify-between selection:bg-emerald-500 selection:text-slate-950 transition-colors duration-300 font-sans">
+    <div className="min-h-screen bg-ethereal-mesh text-slate-900 dark:text-slate-100 flex flex-col justify-between selection:bg-emerald-500 selection:text-slate-950 transition-colors duration-300 font-sans relative">
+      
+      {/* Toast Notification Stack */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
       {/* Floating Glass Navbar */}
       <div className="pt-6 px-4">
         <header className="max-w-4xl mx-auto bg-white/90 dark:bg-[#111726]/90 backdrop-blur-2xl border border-slate-200 dark:border-slate-800 rounded-full p-2 px-4 sm:px-6 flex items-center justify-between shadow-lg transition-colors">
@@ -203,7 +219,7 @@ export function App() {
             <ShortenForm onShortenSuccess={handleShortenSuccess} />
 
             {/* Shorten Result Display */}
-            {currentResult && <ShortenResult result={currentResult} />}
+            {currentResult && <ShortenResult result={currentResult} onShowToast={showToast} />}
 
             {/* Metric Architecture Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
@@ -236,12 +252,13 @@ export function App() {
             <UrlList
               urls={urls}
               onRefreshStats={refreshAllStats}
+              onShowToast={showToast}
             />
           </div>
         )}
 
         {/* Analytics Tab */}
-        {activeTab === 'analytics' && <AnalyticsDashboard />}
+        {activeTab === 'analytics' && <AnalyticsDashboard onShowToast={showToast} />}
 
         {/* API Specs Tab */}
         {activeTab === 'api' && (

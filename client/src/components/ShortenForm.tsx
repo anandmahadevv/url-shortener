@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link2, Sparkles, Calendar, Tag, AlertCircle, ArrowUpRight, Zap, Database } from 'lucide-react';
+import { Link2, Sparkles, Calendar, Tag, AlertCircle, ArrowUpRight, ShieldCheck, Zap } from 'lucide-react';
 
 interface ShortenFormProps {
   onShortenSuccess: (result: any) => void;
@@ -11,6 +11,14 @@ export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) =>
   const [expiresAt, setExpiresAt] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const samplePresets = [
+    { label: 'GitHub Repository', url: 'https://github.com/anandmahadevv/url-shortener' },
+    { label: 'React Documentation', url: 'https://react.dev/reference/react' },
+    { label: 'Vite Ecosystem', url: 'https://vite.dev/guide/' }
+  ];
+
+  const isValidProtocol = longUrl.trim().startsWith('http://') || longUrl.trim().startsWith('https://');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,9 +71,21 @@ export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) =>
         
         {/* Main URL Input */}
         <div>
-          <label htmlFor="longUrl" className="block text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-2">
-            Destination URL
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="longUrl" className="block text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Destination URL
+            </label>
+
+            {longUrl.trim().length > 0 && (
+              <span className={`text-[11px] font-semibold flex items-center gap-1 ${
+                isValidProtocol ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+              }`}>
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {isValidProtocol ? 'Valid Protocol' : 'Requires http:// or https://'}
+              </span>
+            )}
+          </div>
+
           <div className="relative flex items-center bg-slate-50 dark:bg-[#0b0f19] border border-slate-300 dark:border-slate-700 rounded-2xl focus-within:border-emerald-500 transition-all">
             <Link2 className="w-5 h-5 text-slate-400 dark:text-slate-500 ml-4 shrink-0" />
             <input
@@ -77,10 +97,27 @@ export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) =>
               className="w-full px-4 py-3.5 bg-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none text-sm font-sans font-medium"
             />
           </div>
+
+          {/* Quick Preset Buttons */}
+          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+            <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1">
+              <Zap className="w-3 h-3 text-emerald-500" /> Presets:
+            </span>
+            {samplePresets.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => setLongUrl(preset.url)}
+                className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-100 dark:bg-slate-800/80 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-300 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Option Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           {/* Custom Alias Input */}
           <div>
             <label htmlFor="customAlias" className="block text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-1.5">
