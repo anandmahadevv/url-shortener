@@ -26,7 +26,8 @@ interface LocalUser {
   name?: string;
 }
 
-const CLERK_ENABLED = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_aG9uZXN0LXBlbmd1aW4tMjcuY2xlcmsuYWNjb3VudHMuZGV2JA';
+const CLERK_ENABLED = Boolean(CLERK_PUBLISHABLE_KEY);
 
 export function App() {
   const [activeTab, setActiveTab] = useState<'shortener' | 'analytics' | 'api'>('shortener');
