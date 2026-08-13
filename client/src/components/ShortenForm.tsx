@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { Link2, Sparkles, Calendar, Tag, AlertCircle, ArrowUpRight, Zap, Database } from 'lucide-react';
+import { useAuth } from '@clerk/clerk-react';
 
 interface ShortenFormProps {
   onShortenSuccess: (result: any) => void;
 }
+
+const CLERK_ENABLED = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
 export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) => {
   const [longUrl, setLongUrl] = useState('');
@@ -12,6 +15,13 @@ export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) =>
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  let clerkAuth: any = null;
+  try {
+    if (CLERK_ENABLED) clerkAuth = useAuth();
+  } catch (err) {
+    // fallback
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +35,16 @@ export const ShortenForm: React.FC<ShortenFormProps> = ({ onShortenSuccess }) =>
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('swift_token');
+      let token = localStorage.getItem('swift_token');
+      if (CLERK_ENABLED && clerkAuth?.getToken) {
+        try {
+          const clerkToken = await clerkAuth.getToken();
+          if (clerkToken) token = clerkToken;
+        } catch (err) {
+          // ignore
+        }
+      }
+
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;

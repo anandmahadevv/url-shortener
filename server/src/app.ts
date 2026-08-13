@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { clerkMiddleware } from '@clerk/express';
 import { shortenRateLimiter } from './middleware/rateLimiter.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requireAuth, optionalAuth } from './middleware/auth.js';
@@ -22,6 +23,7 @@ export const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(clerkMiddleware());
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });

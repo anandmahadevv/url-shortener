@@ -6,7 +6,8 @@ import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { NotFoundPage } from './components/NotFoundPage';
 import { ThemeSwitcher, ThemeMode } from './components/ThemeSwitcher';
 import { AuthModal } from './components/AuthModal';
-import { Zap, Cpu, Link2, BarChart2, Sparkles, Terminal, User as UserIcon, LogOut, LogIn } from 'lucide-react';
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, useUser, useAuth } from '@clerk/clerk-react';
+import { Zap, Cpu, Link2, BarChart2, Sparkles, Terminal, User as UserIcon, LogOut, LogIn, Key, ShieldCheck } from 'lucide-react';
 
 interface UrlItem {
   id: string;
@@ -19,20 +20,39 @@ interface UrlItem {
   customAlias: boolean;
 }
 
-interface User {
+interface LocalUser {
   id: string;
   email: string;
   name?: string;
 }
 
+const CLERK_ENABLED = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+
 export function App() {
   const [activeTab, setActiveTab] = useState<'shortener' | 'analytics' | 'api'>('shortener');
   const [currentResult, setCurrentResult] = useState<UrlItem | null>(null);
   const [urls, setUrls] = useState<UrlItem[]>([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [localUser, setLocalUser] = useState<LocalUser | null>(null);
+  const [showLocalAuthModal, setShowLocalAuthModal] = useState(false);
   const [isNotFoundPage, setIsNotFoundPage] = useState(false);
   const [notFoundCode, setNotFoundCode] = useState<string | undefined>(undefined);
+
+  // Clerk Auth Hooks (safely handled if Clerk is disabled)
+  let clerkUser: any = null;
+  let clerkAuth: any = null;
+  try {
+    if (CLERK_ENABLED) {
+      clerkUser = useUser();
+      clerkAuth = useAuth();
+    }
+  } catch (err) {
+    // Fallback if not inside ClerkProvider
+  }
+
+  const isSignedIn = CLERK_ENABLED ? (clerkUser?.isSignedIn ?? false) : Boolean(localUser);
+  const activeUserEmail = CLERK_ENABLED
+    ? (clerkUser?.user?.primaryEmailAddress?.emailAddress || clerkUser?.user?.fullName || 'User')
+    : (localUser?.name || localUser?.email.split('@')[0] || 'User');
 
   // Theme Management
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
@@ -74,31 +94,47 @@ export function App() {
     }
   }, []);
 
-  // Fetch logged-in user session
+  // Fetch logged-in user links
   useEffect(() => {
-    const token = localStorage.getItem('swift_token');
-    if (token) {
-      fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.user) {
-            setCurrentUser(data.user);
+    const loadUserUrls = async () => {
+      if (CLERK_ENABLED && clerkUser?.isSignedIn && clerkAuth?.getToken) {
+        try {
+          const token = await clerkAuth.getToken();
+          if (token) {
             fetchUserUrls(token);
-          } else {
+            return;
+          }
+        } catch (err) {
+          console.error('Error fetching Clerk token', err);
+        }
+      }
+
+      const token = localStorage.getItem('swift_token');
+      if (token) {
+        fetch('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.user) {
+              setLocalUser(data.user);
+              fetchUserUrls(token);
+            } else {
+              localStorage.removeItem('swift_token');
+              loadLocalUrls();
+            }
+          })
+          .catch(() => {
             localStorage.removeItem('swift_token');
             loadLocalUrls();
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem('swift_token');
-          loadLocalUrls();
-        });
-    } else {
-      loadLocalUrls();
-    }
-  }, []);
+          });
+      } else {
+        loadLocalUrls();
+      }
+    };
+
+    loadUserUrls();
+  }, [clerkUser?.isSignedIn]);
 
   const loadLocalUrls = () => {
     const saved = localStorage.getItem('swift_urls');
@@ -154,7 +190,7 @@ export function App() {
       );
 
       setUrls(updated);
-      if (!currentUser) {
+      if (!isSignedIn) {
         localStorage.setItem('swift_urls', JSON.stringify(updated));
       }
     } catch (err) {
@@ -168,27 +204,36 @@ export function App() {
     setUrls((prev) => {
       const filtered = prev.filter((u) => u.shortCode !== newUrl.shortCode);
       const nextList = [newUrl, ...filtered];
-      if (!currentUser) {
+      if (!isSignedIn) {
         localStorage.setItem('swift_urls', JSON.stringify(nextList));
       }
       return nextList;
     });
   };
 
-  const handleAuthSuccess = (user: User, token: string) => {
+  const handleLocalAuthSuccess = (user: LocalUser, token: string) => {
     localStorage.setItem('swift_token', token);
-    setCurrentUser(user);
+    setLocalUser(user);
     fetchUserUrls(token);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('swift_token');
-    setCurrentUser(null);
+    setLocalUser(null);
     loadLocalUrls();
   };
 
   const handleDeleteUrl = async (shortCode: string) => {
-    const token = localStorage.getItem('swift_token');
+    let token = localStorage.getItem('swift_token');
+    if (CLERK_ENABLED && clerkAuth?.getToken) {
+      try {
+        const clerkToken = await clerkAuth.getToken();
+        if (clerkToken) token = clerkToken;
+      } catch (err) {
+        // fallback to local token
+      }
+    }
+
     if (!token) return;
 
     try {
@@ -275,30 +320,54 @@ export function App() {
           </div>
 
           <div className="flex items-center gap-2.5">
-            {/* User Profile / Auth Button */}
-            {currentUser ? (
-              <div className="flex items-center gap-2">
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30 text-xs font-semibold">
-                  <UserIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>{currentUser.name || currentUser.email.split('@')[0]}</span>
-                </div>
+            {/* User Profile / Auth Section */}
+            {CLERK_ENABLED ? (
+              <>
+                <SignedIn>
+                  <div className="flex items-center gap-2">
+                    <span className="hidden sm:inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30 text-xs font-semibold">
+                      {activeUserEmail}
+                    </span>
+                    <UserButton afterSignOutUrl="/" />
+                  </div>
+                </SignedIn>
 
-                <button
-                  onClick={handleLogout}
-                  className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950 dark:hover:text-rose-400 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
-                  title="Sign Out"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <button className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-800 text-xs font-bold transition-all cursor-pointer shadow-sm">
+                      <LogIn className="w-3.5 h-3.5" />
+                      <span>Clerk Sign In</span>
+                    </button>
+                  </SignInButton>
+                </SignedOut>
+              </>
             ) : (
-              <button
-                onClick={() => setShowAuthModal(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-800 text-xs font-bold transition-all cursor-pointer shadow-sm"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Sign In</span>
-              </button>
+              <>
+                {localUser ? (
+                  <div className="flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30 text-xs font-semibold">
+                      <UserIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>{activeUserEmail}</span>
+                    </div>
+
+                    <button
+                      onClick={handleLogout}
+                      className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950 dark:hover:text-rose-400 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+                      title="Sign Out"
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowLocalAuthModal(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white border border-slate-800 text-xs font-bold transition-all cursor-pointer shadow-sm"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Sign In</span>
+                  </button>
+                )}
+              </>
             )}
 
             <ThemeSwitcher themeMode={themeMode} onChangeTheme={setThemeMode} />
@@ -306,11 +375,11 @@ export function App() {
         </header>
       </div>
 
-      {/* Auth Modal Popup */}
-      {showAuthModal && (
+      {/* Local Auth Modal Popup */}
+      {showLocalAuthModal && (
         <AuthModal
-          onClose={() => setShowAuthModal(false)}
-          onAuthSuccess={handleAuthSuccess}
+          onClose={() => setShowLocalAuthModal(false)}
+          onAuthSuccess={handleLocalAuthSuccess}
         />
       )}
 
@@ -321,7 +390,8 @@ export function App() {
             {/* Hero Header Banner */}
             <div className="text-center space-y-4 pt-2">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> SwiftURL Engine &bull; Redis Hot Cache &bull; Postgres DB
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                {CLERK_ENABLED ? 'Clerk Enterprise Auth Activated' : 'SwiftURL Engine &bull; Redis Hot Cache &bull; Postgres DB'}
               </div>
 
               <h1 className="text-3xl sm:text-5xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white leading-tight">
@@ -334,6 +404,16 @@ export function App() {
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-xl mx-auto font-sans leading-relaxed">
                 Fast, deterministic Base62 short links, dual-layer caching, non-blocking click telemetry, and dynamic QR Studio.
               </p>
+
+              {/* Clerk Key Setup Notice (shown if key not yet added) */}
+              {!CLERK_ENABLED && (
+                <div className="max-w-xl mx-auto mt-4 bg-slate-50 dark:bg-[#111726] border border-slate-200 dark:border-slate-800 p-3 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <Key className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>To activate <strong>Clerk Auth</strong>, add <code>VITE_CLERK_PUBLISHABLE_KEY=pk_test_...</code> in your <code>.env</code> file.</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Main Shorten Form */}
@@ -355,9 +435,9 @@ export function App() {
               </div>
 
               <div className="bg-white dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Algorithm</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Auth Engine</span>
                 <span className="text-sm font-bold font-sans text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-1">
-                  <Cpu className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Base62 Key
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> {CLERK_ENABLED ? 'Clerk SSO' : 'JWT / Local'}
                 </span>
               </div>
 
@@ -372,8 +452,14 @@ export function App() {
             {/* List of Shortened URLs */}
             <UrlList
               urls={urls}
-              onRefreshStats={() => currentUser ? fetchUserUrls(localStorage.getItem('swift_token') || '') : refreshAllStats(urls)}
-              onDeleteUrl={currentUser ? handleDeleteUrl : undefined}
+              onRefreshStats={() => {
+                if (CLERK_ENABLED && clerkAuth?.getToken) {
+                  clerkAuth.getToken().then((token: string) => fetchUserUrls(token));
+                } else {
+                  refreshAllStats(urls);
+                }
+              }}
+              onDeleteUrl={isSignedIn ? handleDeleteUrl : undefined}
             />
           </div>
         )}
@@ -391,7 +477,7 @@ export function App() {
                   REST API Interface Specification
                 </h2>
                 <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-full border border-emerald-500/30">
-                  v1.0 Ready
+                  Clerk & JWT Ready
                 </span>
               </div>
 
@@ -447,7 +533,7 @@ export function App() {
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-            <span>SwiftURL Infrastructure &bull; Express + React + Tailwind</span>
+            <span>SwiftURL Infrastructure &bull; Express + React + Clerk Auth</span>
           </div>
           <p className="text-slate-500 dark:text-slate-400">&copy; 2026 SwiftURL / niat.me Engine.</p>
         </div>
