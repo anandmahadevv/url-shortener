@@ -90,7 +90,7 @@ export function App() {
                 const data = JSON.parse(text);
                 return {
                   ...item,
-                  shortUrl: `https://niat.me/${item.shortCode}`,
+                  shortUrl: data.shortUrl || item.shortUrl,
                   clickCount: data.clickCount
                 };
               } catch {
@@ -100,10 +100,7 @@ export function App() {
           } catch (err) {
             // retain existing
           }
-          return {
-            ...item,
-            shortUrl: `https://niat.me/${item.shortCode}`
-          };
+          return item;
         })
       );
 
@@ -115,15 +112,11 @@ export function App() {
   };
 
   const handleShortenSuccess = (newUrl: UrlItem) => {
-    const formattedUrl = {
-      ...newUrl,
-      shortUrl: `https://niat.me/${newUrl.shortCode}`
-    };
-    setCurrentResult(formattedUrl);
+    setCurrentResult(newUrl);
 
     setUrls((prev) => {
-      const filtered = prev.filter((u) => u.shortCode !== formattedUrl.shortCode);
-      const nextList = [formattedUrl, ...filtered];
+      const filtered = prev.filter((u) => u.shortCode !== newUrl.shortCode);
+      const nextList = [newUrl, ...filtered];
       localStorage.setItem('swift_urls', JSON.stringify(nextList));
       return nextList;
     });
@@ -144,80 +137,74 @@ export function App() {
   const totalClicks = urls.reduce((sum, u) => sum + (u.clickCount || 0), 0);
 
   return (
-    <div className="min-h-screen bg-ethereal-mesh text-slate-900 dark:text-slate-100 flex flex-col justify-between selection:bg-emerald-400 selection:text-slate-950 transition-colors duration-300">
+    <div className="min-h-screen bg-ethereal-mesh text-slate-900 dark:text-slate-100 flex flex-col justify-between selection:bg-emerald-500 selection:text-slate-950 transition-colors duration-300 font-sans">
       {/* Floating Glass Navbar */}
       <div className="pt-6 px-4">
-        <header className="max-w-4xl mx-auto bg-white/80 dark:bg-white/[0.03] backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 ring-1 ring-slate-900/5 dark:ring-white/5 rounded-full p-2 px-4 sm:px-6 flex items-center justify-between shadow-xl dark:shadow-2xl transition-colors">
+        <header className="max-w-4xl mx-auto bg-white/90 dark:bg-[#111726]/90 backdrop-blur-2xl border border-slate-200 dark:border-slate-800 rounded-full p-2 px-4 sm:px-6 flex items-center justify-between shadow-lg transition-colors">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
-              <Zap className="w-4 h-4 text-slate-950 fill-slate-950" />
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+              <Zap className="w-5 h-5 text-slate-950 fill-slate-950" />
             </div>
-            <div className="flex items-center gap-2 font-mono text-xs">
-              <span className="font-bold text-slate-900 dark:text-slate-100 tracking-tight">niat.me</span>
+            <div className="flex items-center gap-2 font-mono text-sm">
+              <span className="font-bold text-slate-900 dark:text-white tracking-tight">SwiftURL</span>
               <span className="text-slate-400 dark:text-slate-600">/</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-medium">engine</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">niat.me</span>
             </div>
           </div>
 
           {/* Navigation Tab Bar */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#050608] p-1 rounded-full border border-slate-200 dark:border-white/10 text-xs font-mono">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#0b0f19] p-1 rounded-full border border-slate-200 dark:border-slate-800 text-xs sm:text-sm font-semibold">
             <button
               onClick={() => setActiveTab('shortener')}
-              className={`px-3 sm:px-4 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 sm:px-4 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-2 ${
                 activeTab === 'shortener'
-                  ? 'bg-emerald-500 dark:bg-emerald-400 text-slate-950 font-bold shadow-md'
+                  ? 'bg-emerald-600 dark:bg-emerald-500 text-white font-bold shadow-md'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <Link2 className="w-3.5 h-3.5" />
+              <Link2 className="w-4 h-4" />
               <span className="hidden sm:inline">Shortener</span>
             </button>
 
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`px-3 sm:px-4 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 sm:px-4 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-2 ${
                 activeTab === 'analytics'
-                  ? 'bg-emerald-500 dark:bg-emerald-400 text-slate-950 font-bold shadow-md'
+                  ? 'bg-emerald-600 dark:bg-emerald-500 text-white font-bold shadow-md'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <BarChart2 className="w-3.5 h-3.5" />
+              <BarChart2 className="w-4 h-4" />
               <span className="hidden sm:inline">Analytics</span>
             </button>
 
             <button
               onClick={() => setActiveTab('api')}
-              className={`px-3 sm:px-4 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 sm:px-4 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-2 ${
                 activeTab === 'api'
-                  ? 'bg-emerald-500 dark:bg-emerald-400 text-slate-950 font-bold shadow-md'
+                  ? 'bg-emerald-600 dark:bg-emerald-500 text-white font-bold shadow-md'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <Terminal className="w-3.5 h-3.5" />
+              <Terminal className="w-4 h-4" />
               <span className="hidden sm:inline">API</span>
             </button>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Theme Mode Switcher: Light, Dark, System */}
             <ThemeSwitcher themeMode={themeMode} onChangeTheme={setThemeMode} />
           </div>
         </header>
       </div>
 
-      <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-12 pb-24 flex-grow">
+      <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-10 pb-24 flex-grow">
         {activeTab === 'shortener' && (
           <div className="space-y-10 animate-slide-up">
-            {/* Shorten Form - Placed at the very top of the page */}
-            <ShortenForm onShortenSuccess={handleShortenSuccess} />
-
-            {/* Shorten Result Display */}
-            {currentResult && <ShortenResult result={currentResult} />}
-
-            {/* Header Banner - Placed below ShortenForm as requested */}
-            <div className="text-center space-y-4 pt-4">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] uppercase font-mono font-semibold tracking-[0.25em]">
-                <Sparkles className="w-3 h-3" /> niat.me 6-Letter Key Engine &bull; Redis Cache &bull; Postgres
+            
+            {/* Hero Header Banner - Placed First for Clear Visual Hierarchy */}
+            <div className="text-center space-y-4 pt-2">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> SwiftURL Engine &bull; Redis Hot Cache &bull; Postgres DB
               </div>
 
               <h1 className="text-3xl sm:text-5xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white leading-tight">
@@ -227,43 +214,41 @@ export function App() {
                 </span>
               </h1>
 
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto font-mono leading-relaxed">
-                Deterministic 6-letter alphabetic short code generation for <strong className="text-slate-900 dark:text-slate-200 font-bold">niat.me</strong>, dual-layer caching, non-blocking click analytics, and strict protocol validation.
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-xl mx-auto font-sans leading-relaxed">
+                Fast, deterministic Base62 short links, dual-layer caching, non-blocking click telemetry, and dynamic QR Studio.
               </p>
             </div>
 
-            {/* Asymmetrical Bento Metric Architecture - Placed below URL Shortener section */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2">
-              <div className="bg-slate-900/[0.03] dark:bg-white/[0.025] p-1 rounded-2xl border border-slate-200/90 dark:border-white/10 ring-1 ring-slate-900/5 dark:ring-white/5">
-                <div className="bg-white dark:bg-[#090a0d] p-4 rounded-[calc(1rem-0.25rem)] transition-colors">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">Provisioned Links</span>
-                  <span className="text-2xl font-bold font-mono text-slate-900 dark:text-slate-100">{urls.length}</span>
-                </div>
+            {/* Main Shorten Form */}
+            <ShortenForm onShortenSuccess={handleShortenSuccess} />
+
+            {/* Shorten Result Display */}
+            {currentResult && <ShortenResult result={currentResult} />}
+
+            {/* Metric Architecture Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+              <div className="bg-white/90 dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Provisioned Links</span>
+                <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-white">{urls.length}</span>
               </div>
 
-              <div className="bg-slate-900/[0.03] dark:bg-white/[0.025] p-1 rounded-2xl border border-slate-200/90 dark:border-white/10 ring-1 ring-slate-900/5 dark:ring-white/5">
-                <div className="bg-white dark:bg-[#090a0d] p-4 rounded-[calc(1rem-0.25rem)] transition-colors">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">Click Telemetry</span>
-                  <span className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">{totalClicks}</span>
-                </div>
+              <div className="bg-white/90 dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Click Telemetry</span>
+                <span className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{totalClicks}</span>
               </div>
 
-              <div className="bg-slate-900/[0.03] dark:bg-white/[0.025] p-1 rounded-2xl border border-slate-200/90 dark:border-white/10 ring-1 ring-slate-900/5 dark:ring-white/5">
-                <div className="bg-white dark:bg-[#090a0d] p-4 rounded-[calc(1rem-0.25rem)] transition-colors">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">Algorithm</span>
-                  <span className="text-xs font-bold font-mono text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-1.5">
-                    <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> 6-Letter Alpha
-                  </span>
-                </div>
+              <div className="bg-white/90 dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Algorithm</span>
+                <span className="text-sm font-bold font-sans text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-1">
+                  <Cpu className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Base62 Key
+                </span>
               </div>
 
-              <div className="bg-slate-900/[0.03] dark:bg-white/[0.025] p-1 rounded-2xl border border-slate-200/90 dark:border-white/10 ring-1 ring-slate-900/5 dark:ring-white/5">
-                <div className="bg-white dark:bg-[#090a0d] p-4 rounded-[calc(1rem-0.25rem)] transition-colors">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500 block mb-1">Caching</span>
-                  <span className="text-xs font-bold font-mono text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-1.5">
-                    <Zap className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Redis Hot
-                  </span>
-                </div>
+              <div className="bg-white/90 dark:bg-[#111726] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">Caching Layer</span>
+                <span className="text-sm font-bold font-sans text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-1">
+                  <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Redis Hot
+                </span>
               </div>
             </div>
 
@@ -277,26 +262,26 @@ export function App() {
 
         {/* API Specs Tab */}
         {activeTab === 'api' && (
-          <div className="w-full max-w-3xl mx-auto bg-slate-900/[0.03] dark:bg-white/[0.025] p-1.5 rounded-[2rem] border border-slate-200/90 dark:border-white/10 ring-1 ring-slate-900/5 dark:ring-white/5 shadow-2xl backdrop-blur-xl animate-slide-up transition-colors">
-            <div className="bg-white dark:bg-[#090a0d] rounded-[calc(2rem-0.375rem)] p-6 sm:p-8 doppelrand-core space-y-6 font-mono transition-colors">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-white/10">
-                <h2 className="text-xs uppercase tracking-[0.2em] font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <div className="w-full max-w-3xl mx-auto bg-white/90 dark:bg-[#111726] p-2 sm:p-3 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl backdrop-blur-xl animate-slide-up transition-colors">
+            <div className="bg-slate-50/50 dark:bg-[#0b0f19] rounded-2xl p-6 sm:p-8 doppelrand-core space-y-6 transition-colors">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2 font-display">
+                  <Terminal className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   REST API Interface Specification
                 </h2>
-                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-full border border-emerald-500/30">
                   v1.0 Ready
                 </span>
               </div>
 
               {/* Endpoint 1 */}
-              <div className="bg-slate-50 dark:bg-[#040507] p-4 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
+              <div className="bg-white dark:bg-[#111726] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">POST</span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">/api/shorten</span>
+                  <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-mono">POST</span>
+                  <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">/api/shorten</span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Shortens a long URL using Base62 encoding of auto-incrementing DB id.</p>
-                <pre className="text-[11px] bg-white dark:bg-[#090a0d] p-3 rounded-xl text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-transparent overflow-x-auto">
+                <p className="text-xs text-slate-600 dark:text-slate-300 font-sans">Shortens a long URL using Base62 encoding of auto-incrementing DB id.</p>
+                <pre className="text-xs font-mono bg-slate-900 text-emerald-400 p-3 rounded-lg overflow-x-auto">
 {`{
   "longUrl": "https://example.com/page",
   "customAlias": "my-alias", // Optional
@@ -306,30 +291,30 @@ export function App() {
               </div>
 
               {/* Endpoint 2 */}
-              <div className="bg-slate-50 dark:bg-[#040507] p-4 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
+              <div className="bg-white dark:bg-[#111726] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border border-indigo-500/30">GET</span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">/:shortCode</span>
+                  <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-indigo-500/20 text-indigo-800 dark:text-indigo-300 border border-indigo-500/30 font-mono">GET</span>
+                  <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">/:shortCode</span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Resolves short code via Redis cache & Postgres, returning 301 Permanent Redirect.</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300 font-sans">Resolves short code via Redis cache & Postgres, returning HTTP 301 Permanent Redirect.</p>
               </div>
 
               {/* Endpoint 3 */}
-              <div className="bg-slate-50 dark:bg-[#040507] p-4 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
+              <div className="bg-white dark:bg-[#111726] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-teal-500/20 text-teal-700 dark:text-teal-400 border border-teal-500/30">GET</span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">/api/stats/:shortCode</span>
+                  <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-teal-500/20 text-teal-800 dark:text-teal-300 border border-teal-500/30 font-mono">GET</span>
+                  <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">/api/stats/:shortCode</span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Returns click count, creation timestamp, expiration, and original URL.</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300 font-sans">Returns click count, creation timestamp, expiration, and original URL.</p>
               </div>
 
               {/* Endpoint 4 */}
-              <div className="bg-slate-50 dark:bg-[#040507] p-4 rounded-2xl border border-slate-200 dark:border-white/10 space-y-2">
+              <div className="bg-white dark:bg-[#111726] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-500/30">GET</span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">/api/analytics/overview</span>
+                  <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 font-mono">GET</span>
+                  <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">/api/analytics/overview</span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Aggregates system-wide telemetry, device breakdown, and traffic velocity.</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300 font-sans">Aggregates system-wide telemetry, device breakdown, and traffic velocity.</p>
               </div>
             </div>
           </div>
@@ -337,13 +322,13 @@ export function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200/90 dark:border-white/10 bg-white/80 dark:bg-[#040507]/90 backdrop-blur-md py-8 px-4 text-center text-xs font-mono text-slate-500 transition-colors">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0b0f19]/90 backdrop-blur-md py-6 px-4 text-center text-xs font-medium text-slate-600 dark:text-slate-400 transition-colors">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-            <span>niat.me Vanguard Engine &bull; Express + React + Tailwind</span>
+            <span>SwiftURL Infrastructure &bull; Express + React + Tailwind</span>
           </div>
-          <p className="text-slate-500 dark:text-slate-600">&copy; 2026 niat.me Infrastructure.</p>
+          <p className="text-slate-500 dark:text-slate-400">&copy; 2026 SwiftURL / niat.me Engine.</p>
         </div>
       </footer>
     </div>

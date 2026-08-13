@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Download, Copy, Check, QrCode as QrIcon, Palette, Image as ImageIcon } from 'lucide-react';
-import { drawQrToCanvas } from '../utils/qrGenerator';
+import { drawQrToCanvas, generateQrDataUrl } from '../utils/qrGenerator';
 
 interface QrCodeModalProps {
   shortUrl: string;
@@ -36,14 +36,16 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({ shortUrl, shortCode, o
     }
   }, [shortUrl, fgColor, bgColor]);
 
-  const handleDownload = () => {
-    const tempCanvas = document.createElement('canvas');
-    drawQrToCanvas(tempCanvas, shortUrl, fgColor, bgColor, 1024);
-
-    const link = document.createElement('a');
-    link.download = `niat-me-qr-${shortCode}.png`;
-    link.href = tempCanvas.toDataURL('image/png');
-    link.click();
+  const handleDownload = async () => {
+    try {
+      const dataUrl = await generateQrDataUrl(shortUrl, fgColor, bgColor, 1024);
+      const link = document.createElement('a');
+      link.download = `niat-me-qr-${shortCode}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Failed to download QR code image', err);
+    }
   };
 
   const handleCopyImage = async () => {

@@ -28,85 +28,83 @@ export const ShortenResult: React.FC<ShortenResultProps> = ({ result }) => {
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto mt-6 bg-emerald-500/10 p-1.5 rounded-[2rem] border border-emerald-500/30 ring-1 ring-emerald-500/20 shadow-2xl backdrop-blur-xl animate-slide-up transition-colors duration-300">
-      <div className="bg-white dark:bg-[#090a0d] rounded-[calc(2rem-0.375rem)] p-6 doppelrand-core relative overflow-hidden transition-colors duration-300">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
-            <h3 className="text-xs font-mono font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-              Short Link Provisioned
-            </h3>
-          </div>
-
-          {result.customAlias && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-              <Sparkles className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Custom Alias
-            </span>
-          )}
+    <div className="w-full max-w-3xl mx-auto mt-6 bg-white dark:bg-[#111726] p-6 sm:p-8 rounded-3xl border border-emerald-500/40 shadow-lg shadow-emerald-500/10 animate-slide-up transition-colors duration-300 relative overflow-hidden">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+          <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+            Short Link Provisioned
+          </h3>
         </div>
 
-        {/* Short URL Result Display */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50 dark:bg-[#040507] p-3 rounded-2xl border border-slate-200 dark:border-white/10">
-          <div className="flex items-center gap-3 overflow-hidden px-3">
-            <span className="text-base sm:text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 truncate">
-              {result.shortUrl}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => setShowQrModal(true)}
-              className="px-3.5 py-2.5 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
-              title="Generate & Customize QR Code"
-            >
-              <QrIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>QR Studio</span>
-            </button>
-
-            <button
-              onClick={handleCopy}
-              id="copy-short-url-btn"
-              className="flex-1 sm:flex-initial flex items-center justify-between gap-3 px-4 py-2.5 bg-emerald-500 dark:bg-emerald-400 hover:bg-emerald-400 dark:hover:bg-emerald-300 text-slate-950 text-xs font-mono font-bold rounded-xl transition-all cursor-pointer shadow-md group"
-            >
-              <span>{copied ? 'Copied!' : 'Copy Link'}</span>
-              <div className="w-6 h-6 rounded-lg bg-slate-950/20 text-slate-950 flex items-center justify-center group-hover:scale-110 transition-transform">
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              </div>
-            </button>
-
-            <a
-              href={result.shortUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2.5 bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-xl transition-colors"
-              title="Test redirect"
-            >
-              <ExternalLink className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            </a>
-          </div>
-        </div>
-
-        {/* QR Code Modal Popup */}
-        {showQrModal && (
-          <QrCodeModal
-            shortUrl={result.shortUrl}
-            shortCode={result.shortCode}
-            onClose={() => setShowQrModal(false)}
-          />
+        {result.customAlias && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Custom Alias
+          </span>
         )}
+      </div>
 
-        {/* Metadata Footer */}
-        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/10 flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-2 font-mono">
-          <div className="truncate max-w-md">
-            <span className="text-slate-400 dark:text-slate-500">Destination: </span>
-            <span className="text-slate-700 dark:text-slate-300 truncate">{result.longUrl}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-              Base62 Code: <strong className="text-emerald-600 dark:text-emerald-400">{result.shortCode}</strong>
-            </span>
-          </div>
+      {/* Short URL Result Box */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-50 dark:bg-[#0b0f19] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-inner">
+        <div className="flex items-center gap-3 overflow-hidden px-2">
+          <span className="text-base sm:text-lg font-bold font-mono text-emerald-700 dark:text-emerald-300 truncate">
+            {result.shortUrl}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            onClick={() => setShowQrModal(true)}
+            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 dark:border-slate-700 text-xs font-semibold rounded-xl transition-all cursor-pointer flex items-center gap-2"
+            title="Generate & Customize QR Code"
+          >
+            <QrIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>QR Studio</span>
+          </button>
+
+          <button
+            onClick={handleCopy}
+            id="copy-short-url-btn"
+            className="flex-1 sm:flex-initial flex items-center justify-between gap-3 px-4 py-2.5 bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md shadow-emerald-600/20 group"
+          >
+            <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+            <div className="w-5 h-5 rounded-md bg-white/20 text-white flex items-center justify-center group-hover:scale-110 transition-transform">
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            </div>
+          </button>
+
+          <a
+            href={result.shortUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 dark:border-slate-700 rounded-xl transition-colors"
+            title="Test redirect"
+          >
+            <ExternalLink className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          </a>
+        </div>
+      </div>
+
+      {/* QR Code Modal */}
+      {showQrModal && (
+        <QrCodeModal
+          shortUrl={result.shortUrl}
+          shortCode={result.shortCode}
+          onClose={() => setShowQrModal(false)}
+        />
+      )}
+
+      {/* Metadata Footer */}
+      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between text-xs text-slate-600 dark:text-slate-400 gap-2 font-sans font-medium">
+        <div className="truncate max-w-md">
+          <span className="text-slate-500 dark:text-slate-400">Destination: </span>
+          <span className="text-slate-900 dark:text-slate-200 font-mono truncate">{result.longUrl}</span>
+        </div>
+        <div className="flex items-center gap-4 font-mono">
+          <span className="flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
+            Base62 Code: <strong className="text-emerald-700 dark:text-emerald-400 font-bold">{result.shortCode}</strong>
+          </span>
         </div>
       </div>
     </div>
