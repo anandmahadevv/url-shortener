@@ -3,15 +3,10 @@ import { urlService } from '../services/urlService.js';
 import { validateLongUrl, validateCustomAlias } from '../middleware/validator.js';
 
 function getBaseUrl(req: Request): string {
-  if (process.env.BASE_URL && !process.env.BASE_URL.includes('niat.me')) {
+  if (process.env.BASE_URL) {
     return process.env.BASE_URL.replace(/\/$/, '');
   }
-  const host = req.get('host');
-  if (host) {
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
-    return `${protocol}://${host}`;
-  }
-  return process.env.BASE_URL ? process.env.BASE_URL.replace(/\/$/, '') : 'http://localhost:5000';
+  return 'https://niat.me';
 }
 
 export const shortenUrlController = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
