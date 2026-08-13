@@ -15,11 +15,11 @@ class RedisCacheService {
       this.client = new Redis(REDIS_URL, {
         maxRetriesPerRequest: 1,
         retryStrategy: (times) => {
-          if (times > 3) {
+          if (times === 3) {
             console.warn('⚠️  Redis connection failed. Falling back to internal in-memory cache.');
-            return null; // Stop retrying
           }
-          return Math.min(times * 100, 2000);
+          // Exponential backoff capping at 5 seconds, retrying in background
+          return Math.min(times * 200, 5000);
         },
         lazyConnect: true
       });

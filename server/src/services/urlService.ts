@@ -108,6 +108,10 @@ class MemoryStore {
       referrer: meta?.referrer || randomChoice(referrers),
       country: meta?.country || randomChoice(countries)
     });
+
+    if (this.clickLogs.length > 5000) {
+      this.clickLogs.shift();
+    }
   }
 
   async getAll() {
